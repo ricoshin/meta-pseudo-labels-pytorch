@@ -2,7 +2,7 @@ import argparse
 from logging import getLogger
 
 from data.loader import get_dataloader
-from model.loader import ModelManager
+from model.manager import ModelManager
 from optim.test import test
 from optim.train import train
 from utils.logger import set_logger
@@ -16,23 +16,16 @@ log = getLogger('mpl')
 def main(cfg):
   log.info('Preparing for dataset.')
   loaders = get_dataloader(cfg)
-  models = ModelManager(cfg)
+  manager = ModelManager(cfg)
   writers = TFWriters(log_dir=cfg.save_dir, deactivated=cfg.debug)
-  # common_args = {
-  #   'model': cfg.model,
-  #   'dataset': cfg.dataset,
-  #   'bn_momentum': cfg.comm.bn_decay,
-  #   'data_parallel': True,
-  # }
-  # tchr = get_model(dropout_rate=cfg.tchr.dropout, **common_args)
-  # stdn = get_model(dropout_rate=cfg.stdn.dropout, **common_args)
+
   if not cfg.eval_only:
     log.info('Training model.')
-    result = train(cfg, loaders, models, writers.train)
+    result = train(cfg, loaders, manager, writers.train)
     log.info(result)
 
   log.info('Testing model.')
-  result = test(cfg, loaders, models, writers.test)
+  result = test(cfg, loaders, manager, writers.test)
   log.info(result)
 
 
