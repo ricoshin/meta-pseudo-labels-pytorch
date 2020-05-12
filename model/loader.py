@@ -10,12 +10,29 @@ from model.wideresnet import WideResNet
 
 log = logging.getLogger('mpl')
 
-_optim_map = {
-  'sgd': 'SGD',
-  'rmsprop': 'RMSprop',
-  'adagrad': 'Adagrad',
-  'adam': 'Adam',
-}
+
+def get_num_classes(dataset_name):
+  assert isinstance(dataset_name, str)
+  try:
+    return {
+      'cifar10': 10,
+      'svhn': 10,
+      }[dataset_name]
+  except KeyError:
+    raise Exception(f'Invalid dataset name: {dataset_name}')
+
+
+def get_optim_cls(optim_name):
+  assert isinstance(optim_name, str)
+  try:
+    return {
+      'sgd': 'SGD',
+      'rmsprop': 'RMSprop',
+      'adagrad': 'Adagrad',
+      'adam': 'Adam',
+      }[optim_name]
+  except KeyError:
+    raise Exception(f'Invalid optimizer name: {optim_name}')
 
 
 def parse_model(model):
@@ -24,17 +41,6 @@ def parse_model(model):
   assert parsed[0] == 'wresnet', f'{parsed[0]}'
   depth, widen_factor = parsed[1:]
   return int(depth), int(widen_factor)
-
-
-def get_num_classes(dataset):
-  assert isinstance(dataset, str)
-  try:
-    return dict(
-      cifar10=10,
-      svhn=10,
-      )[dataset]
-  except KeyError:
-    raise Exception(f'Invalid dataset name: {dataset}')
 
 
 def get_model(model, dataset, bn_momentum, dropout, data_parallel):
@@ -55,8 +61,7 @@ def get_model(model, dataset, bn_momentum, dropout, data_parallel):
 
 
 def get_optimizer(optim_name, model, **kwargs):
-  assert optim_name in _optim_map, f'Unknown optimizer name: {optim_name}'
-  optim_cls = getattr(optim, _optim_map[optim_name])
+  optim_cls = getattr(optim, get_optim_cls(optim_name))
   optimizer = optim_cls(model.parameters(), **kwargs)
   return optimizer
 

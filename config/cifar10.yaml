@@ -1,6 +1,9 @@
 model: wresnet_28_2
 dataset: cifar10
 n_labeled: 40000
+log:
+  level: info
+  interval: 100
 method:
   base: uda  # sv, ra, uda
   mpl: true

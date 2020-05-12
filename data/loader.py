@@ -31,7 +31,10 @@ def get_dataloader(cfg):
   data_uns = BiTransformedDataset(data_uns, trans_sup, trans_uns)
   data_test = TransformedDataset(data_test, trans_test)
   # data loader
-  comm_kwargs = dict(num_workers=0 if cfg.debug else 8, pin_memory=True)
+  comm_kwargs = dict(
+    num_workers=0 if cfg.debug else 8, 
+    pin_memory=True,
+    )
   loader_sup = InfiniteDataLoader(data_sup, batch_size=cfg.batch_size.sup,
     shuffle=True, drop_last=True, **comm_kwargs)
   loader_uns = InfiniteDataLoader(data_uns, batch_size=cfg.batch_size.uns,

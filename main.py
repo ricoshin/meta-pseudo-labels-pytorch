@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
   cfg = Config.init_from_parser(parser)
   cfg = post_process_config(cfg)
-  set_logger(cfg.log_level, cfg.save_dir)
+  set_logger(cfg.log.level, cfg.save_dir)
 
   if cfg.debug:
     log.warning('Debugging mode!')
