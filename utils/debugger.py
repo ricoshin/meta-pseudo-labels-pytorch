@@ -26,8 +26,6 @@ def getSignalCatcher(name):
 
 
 class SignalCatcher(object):
-  """
-  """
   def __init__(self, name):
     self.name = name
     self._signal = getattr(signal, name)

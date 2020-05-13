@@ -1,9 +1,12 @@
 model: wresnet_28_2
 dataset: cifar10
 n_labeled: 40000
-log:
-  level: info
+valid:
+  metric: top1 # in ['top1', 'loss']
   interval: 100
+log:
+  level: debug
+  interval: 100  # no use for now
 method:
   base: uda  # sv, ra, uda
   mpl: true

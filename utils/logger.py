@@ -1,32 +1,39 @@
 import os
 import logging
-from utils.config import Config
+
+log = logging.getLogger('mpl')
 
 
-def set_logger(level='info', save_dir=''):
-  # formatter = MyFormatter()
+def get_formatter():
   log_fmt = '%(asctime)s [%(levelname)s] %(message)s'
   date_fmt = '%d/%m/%Y %H:%M:%S'
-  formatter = logging.Formatter(log_fmt, datefmt=date_fmt)
-  log_level = getattr(logging, level.upper())
+  return logging.Formatter(log_fmt, datefmt=date_fmt)
 
-  # get logger
-  logger = logging.getLogger('mpl')
-  logger.setLevel(log_level)
 
+def get_log_level(level):
+  return getattr(logging, level.upper())
+
+
+def set_stream_handler(level):
+  assert isinstance(level, str)
+  # set level
+  log = logging.getLogger('mpl')
+  log.setLevel(get_log_level(level))
   # stdio handler
   stream_handler = logging.StreamHandler()
-  stream_handler.setFormatter(formatter)
-  stream_handler.setLevel(log_level)
-  logger.addHandler(stream_handler)
+  stream_handler.setFormatter(get_formatter())
+  stream_handler.setLevel(get_log_level(level))
+  log.addHandler(stream_handler)
 
+
+def set_file_handler(level, save_dir):
+  assert isinstance(level, str)
   # file handler
-  if save_dir:
-    log_file = os.path.join(save_dir, 'log')
-    file_handler = logging.FileHandler(log_file)
-    file_handler.setFormatter(formatter)
-    file_handler.setLevel(log_level)
-    logger.addHandler(file_handler)
+  log_file = os.path.join(save_dir, 'log')
+  file_handler = logging.FileHandler(log_file)
+  file_handler.setFormatter(get_formatter())
+  file_handler.setLevel(get_log_level(level))
+  log.addHandler(file_handler)
 
 
 # class MyFormatter(logging.Formatter):

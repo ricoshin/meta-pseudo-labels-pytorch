@@ -5,9 +5,8 @@ from data.loader import get_dataloader
 from optim.manager import TrainingManager
 from optim.test import test
 from optim.train import train
-from utils.logger import set_logger
 from utils.tfwriter import TFWriters
-from utils.config import Config, post_process_config
+from utils.config import Config, init_config
 from utils.watch import Watch
 
 log = getLogger('mpl')
@@ -17,7 +16,11 @@ def main(cfg):
   log.info('Preparing for dataset.')
   loaders = get_dataloader(cfg)
   manager = TrainingManager(cfg)
-  writers = TFWriters(log_dir=cfg.save_dir, deactivated=cfg.debug)
+  writers = TFWriters(
+    log_dir=cfg.save_dir,
+    name_list=['train', 'valid'], 
+    deactivated=cfg.debug
+    )
 
   if not cfg.eval_only:
     log.info('Training model.')
@@ -39,11 +42,12 @@ if __name__ == '__main__':
   parser.add_argument('--log_level', type=str, default='info')
   parser.add_argument('--debug', action='store_true')
   parser.add_argument('--test_only', action='store_true')
+  parser.add_argument('--from_scratch', action='store_true')
   parser.add_argument('--tag', type=str, default='')
 
-  cfg = Config.init_from_parser(parser)
-  cfg = post_process_config(cfg)
-  set_logger(cfg.log.level, cfg.save_dir)
+  cfg = Config.from_parser(parser)
+  cfg = init_config(cfg)
+  # set_logger(cfg.log.level, cfg.save_dir)
 
   if cfg.debug:
     log.warning('Debugging mode!')

@@ -1,12 +1,17 @@
 from torch import nn
 
+import data, optim, utils
 from optim.metric import accuracy, AverageMeter
 from utils.debugger import getSignalCatcher
 
 
 sigquit = getSignalCatcher('SIGQUIT')
 
-def test(cfg, loaders, manager, writer, desc='test'):
+def test(cfg, loaders, manager, writers, desc='test'):
+  assert isinstance(loaders, data.loader.DataLoaderTriplet)
+  assert isinstance(manager, optim.manager.TrainingManager)
+  assert isinstance(writers, utils.tfwriter.TFWriters)
+
   m = manager
   m.eval()  # batchnorm? saved?
   # xent = nn.CrossEntropyLoss()

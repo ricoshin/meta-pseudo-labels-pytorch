@@ -1,7 +1,11 @@
 import logging
 import os
 
+import torch
+from tqdm import tqdm
+
 from model.loader import get_model, get_optimizer, get_scheduler
+from optim.metric import MetricMonitor
 
 log = logging.getLogger('mpl')
 
@@ -27,8 +31,11 @@ class ModelControl:
 class TrainingManager:
   def __init__(self, cfg, data_parallel=True):
     self.cfg = cfg
-    self.step = 1
+    self.step = 0
     self.step_max = cfg.comm.n_steps
+    self.pbar = None
+    self.monitor = MetricMonitor.by_metric(cfg.valid.metric)
+
     self.model_ctrls = {}
     model_kwargs = {
       'model': cfg.model,
@@ -83,10 +90,19 @@ class TrainingManager:
     for ctrl in self.model_ctrls.values():
       ctrl.cuda_()
 
-  def step_generator(self):
+  def step_generator(self, pbar=True):
+    if pbar:
+      self.pbar = tqdm(initial=self.step, total=self.step_max, leave=False)
     for step in range(self.step, self.step_max):
       self.step += 1
+      if pbar:
+        self.pbar.update(1)
       yield step
+
+  def log(self, *args, delimiter=' | '):
+    if self.pbar:
+      self.pbar.clear()  # to avoid afterimage of pbar
+    log.info(delimiter.join(map(str, args)))
 
   def save(self, cfg):#, status=None):
     if not cfg.save_dir:
@@ -95,11 +111,13 @@ class TrainingManager:
       filepath = os.path.join(cfg.save_dir, name + '.torch')
       torch.save({
         'step': self.step,
+        'record': self.monitor.best_value,
         'model': ctrl.model.state_dict(),
         'optim': ctrl.optim.state_dict(),
+        'sched': ctrl.sched.state_dict(),
       }, filepath)
       log.info(f'Saved snapshot to: {filepath}')
-    # if status:
+    # if monitor:
     #   filepath = os.path.join(cfg.save_dir, 'status.torch')
     #   torch.save(status, filepath)
     #   log.info(f'Saved status to: {filepath}')
@@ -112,8 +130,10 @@ class TrainingManager:
       if os.path.exists(filepath):
         loaded = torch.load(filepath)
         self.step = loaded['step']
+        self.monitor.best_value = loaded['record']
         ctrl.model.load_state_dict(loaded['model'])
         ctrl.optim.load_state_dict(loaded['optim'])
+        ctrl.sched.load_state_dict(loaded['sched'])
         log.info(f'Loaded snapshot from: {filepath}')
         log.info(f'Resume from step {self.step}.')
 

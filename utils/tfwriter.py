@@ -6,12 +6,15 @@ from torch.utils.tensorboard import SummaryWriter
 
 class TFWriters:
   _sub_dir = 'tfrecord'
-  def __init__(self, log_dir, deactivated=False):
+  def __init__(self, log_dir, name_list, deactivated=False):
+    assert isinstance(name_list, (list, tuple))
+    assert all([isinstance(n, str) for n in name_list])
     self.log_dir = path.join(log_dir, TFWriters._sub_dir)
-    self.train = DeactivatableSummaryWriter(
-        log_dir=path.join(self.log_dir, 'train'), deactivated=deactivated)
-    self.test = DeactivatableSummaryWriter(
-        log_dir=path.join(self.log_dir, 'test'), deactivated=deactivated)
+    self.writers = {}
+    for name in name_list:
+      self.writers[name] = DeactivatableSummaryWriter(
+        log_dir=path.join(self.log_dir, name), deactivated=deactivated)
+
 
   def is_activated(self):
     if self.train.is_activated():
@@ -27,6 +30,12 @@ class TFWriters:
   def deactivate(self):
     self.train.deactivate()
     self.test.deactivate()
+
+  def add_scalar(self, name, scalar_value, step, postfix=''):
+    self.writers[name].add_scalar(name + postfix, scalar_value, step)
+
+  def add_scalars(self, name, tag_scalar_dict, step, postfix=''):
+    self.writers[name].add_scalars(name + postfix, tag_scalar_dict, step)
 
 
 class DeactivatableSummaryWriter(SummaryWriter):

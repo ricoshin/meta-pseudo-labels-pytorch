@@ -1,11 +1,15 @@
 - [x] 스케쥴러
 - [x] 테스트 코드
-- [ ] 텐서보드
+- [x] 학습 진행률 출력
+- [x] tqdm
+- [x] Performance monitor
+- [x] 베스트 성능 값도 같이 저장
 - [x] 테스트 코드 acc 안올라가는지 확인
 - [x] 시그널 디버거 도입
+- [x] cosine annealing 확인 ( + 텐서보드에 쓰기 )
+- [x] 텐서보드
 - [ ] 하이퍼 파라미터 튜닝 코드 구현
 - [ ] 실행 자동화 코드 구현
-- [ ] cosine annealing 확인 ( + 텐서보드에 쓰기 )
 - [ ] soft labeling
 - [ ] uda 구현
 - [ ] mpl 구현

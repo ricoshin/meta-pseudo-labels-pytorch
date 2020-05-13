@@ -1,7 +1,9 @@
+import logging
 from collections import defaultdict, OrderedDict
 
 import torch
 
+log = logging.getLogger('mpl')
 
 def accuracy(output, target, topk=(1,)):
   """Computes the precision@k for the specified values of k"""
@@ -20,6 +22,34 @@ def accuracy(output, target, topk=(1,)):
     correct_k = correct[:k].view(-1).float().sum(0)
     res.append(correct_k.mul_(1. / batch_size))
   return res
+
+
+class MetricMonitor:
+  def __init__(self, name, descending=False):
+    self.name = name
+    self.descending = descending
+    self.best_value = float('inf') if descending else float('-inf')
+
+  def __str__(self):
+    return f'best_{self.name}: {self.best_value:4.2%}'
+
+  def is_best(self, value, verbose=True):
+    if ((self.descending and value < self.best_value) or
+        (not self.descending and value > self.best_value)):
+      self.best_value = value
+      log.info(f'Best {self.name}: {self.best_value:4.2%} !')
+      return True
+    return False
+
+  @classmethod
+  def by_metric(cls, name):
+    assert isinstance(name, str)
+    if name == 'loss':
+      return cls(name, True)
+    elif name in ['top1', 'top5']:
+      return cls(name, False)
+    else:
+      raise Exception(f'Invalid metric name: {name}')
 
 
 class AverageMeter:
@@ -66,9 +96,11 @@ class AverageMeter:
       self.values[k] += v * num
       self.steps[k] += num
 
-  def to_dict(self):
+  def to_dict(self, keys=None):
     out_dict = {}
     for k, v in self.values.items():
+      if keys is not None and k not in keys:
+        continue
       out_dict[k] = v / self.steps[k]
     return out_dict
 
