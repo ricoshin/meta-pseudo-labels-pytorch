@@ -1,5 +1,6 @@
 import logging
 import os
+import pprint
 import time
 import yaml
 from argparse import ArgumentParser
@@ -13,7 +14,7 @@ def post_process_config(cfg):
   assert isinstance(cfg, Config)
   if cfg.tag:
     # new save_dir
-    sub_dir = time.strftime("%m%d_%H%M", time.gmtime(time.time()))
+    sub_dir = time.strftime("%m%d_%h%m", time.gmtime(time.time()))
     dir_tag = '_' + cfg.tag if cfg.tag else ''
     save_dir = os.path.join(cfg.save_dir, sub_dir + dir_tag)
     # make dir if needed
@@ -21,11 +22,13 @@ def post_process_config(cfg):
       log.warning(f'The same save_dir already exist: {save_dir}')
     else:
       os.makedirs(save_dir)
+      log.info(f'Made new save_dir: {save_dir}')
     # backup original ver.
     with open(os.path.join(save_dir, cfg.cfg + '.yaml'), 'w') as f:
       yaml.dump(cfg.toDict(), f, default_flow_style=False)
     cfg.save_dir = save_dir
   else:
+    log.warning(f"Nothing will be saved unless '--tag' is provided.")
     cfg.save_dir = ''
 
   if cfg.debug:
@@ -42,7 +45,9 @@ class Config(DotMap):
     return Config(self_)
 
   def __repr__(self):
-    return self.pprint(pformat='json')
+    _dict = {k: v for k, v in self.toDict().items() if v}
+    head = 'Config(Empty members are ommitted.)\n'
+    return head + pprint.pformat(_dict, indent=2, width=80)
 
   @staticmethod
   def get():

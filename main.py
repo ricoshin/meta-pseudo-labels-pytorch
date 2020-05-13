@@ -2,7 +2,7 @@ import argparse
 from logging import getLogger
 
 from data.loader import get_dataloader
-from model.manager import ModelManager
+from optim.manager import TrainingManager
 from optim.test import test
 from optim.train import train
 from utils.logger import set_logger
@@ -16,16 +16,16 @@ log = getLogger('mpl')
 def main(cfg):
   log.info('Preparing for dataset.')
   loaders = get_dataloader(cfg)
-  manager = ModelManager(cfg)
+  manager = TrainingManager(cfg)
   writers = TFWriters(log_dir=cfg.save_dir, deactivated=cfg.debug)
 
   if not cfg.eval_only:
     log.info('Training model.')
-    result = train(cfg, loaders, manager, writers.train)
+    result = train(cfg, loaders, manager, writers)
     log.info(result)
 
   log.info('Testing model.')
-  result = test(cfg, loaders, manager, writers.test)
+  result = test(cfg, loaders, manager, writers)
   log.info(result)
 
 

@@ -3,7 +3,7 @@ dataset: cifar10
 n_labeled: 40000
 log:
   level: info
-  interval: 20
+  interval: 100
 method:
   base: uda  # sv, ra, uda
   mpl: true
@@ -18,7 +18,7 @@ comm:
   w_decay: 0.0005
   bn_decay: 0.99
   n_steps: 1000000
-  n_warmup: 200
+  n_warmup: 2000
 batch_size:
   sup: 128  # 64
   uns: 128  # 320
