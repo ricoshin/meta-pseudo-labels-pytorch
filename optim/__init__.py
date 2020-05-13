@@ -1,14 +1,13 @@
 import logging
-import os
 
 import torch
+from torch import optim
 import torch.backends.cudnn as cudnn
-from torch import nn, optim
 from torch.nn import DataParallel
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from warmup_scheduler import GradualWarmupScheduler
 
-from model.wideresnet import WideResNet
+from nn.wideresnet import WideResNet
 
 log = logging.getLogger('mpl')
 
@@ -22,19 +21,6 @@ def get_num_classes(dataset_name):
       }[dataset_name]
   except KeyError:
     raise Exception(f'Invalid dataset name: {dataset_name}')
-
-
-def get_optim_cls(optim_name):
-  assert isinstance(optim_name, str)
-  try:
-    return {
-      'sgd': 'SGD',
-      'rmsprop': 'RMSprop',
-      'adagrad': 'Adagrad',
-      'adam': 'Adam',
-      }[optim_name]
-  except KeyError:
-    raise Exception(f'Invalid optimizer name: {optim_name}')
 
 
 def parse_model(model):
@@ -60,6 +46,18 @@ def get_model(model, dataset, bn_momentum, dropout, data_parallel):
       model = model.to(device)
   cudnn.benchmark = True
   return model
+
+def get_optim_cls(optim_name):
+  assert isinstance(optim_name, str)
+  try:
+    return {
+      'sgd': 'SGD',
+      'rmsprop': 'RMSprop',
+      'adagrad': 'Adagrad',
+      'adam': 'Adam',
+      }[optim_name]
+  except KeyError:
+    raise Exception(f'Invalid optimizer name: {optim_name}')
 
 
 def get_optimizer(optim_name, model, **kwargs):

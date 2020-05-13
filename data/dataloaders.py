@@ -1,4 +1,8 @@
+from collections import namedtuple
 from torch.utils.data import DataLoader
+
+
+DataLoaderTriplet = namedtuple('DataLoaderTriplet', 'sup, uns, test')
 
 
 class InfiniteDataLoader:

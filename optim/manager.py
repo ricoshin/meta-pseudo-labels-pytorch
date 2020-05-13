@@ -4,7 +4,7 @@ import os
 import torch
 from tqdm import tqdm
 
-from model.loader import get_model, get_optimizer, get_scheduler
+from optim import get_model, get_optimizer, get_scheduler
 from optim.metric import MetricMonitor
 
 log = logging.getLogger('mpl')

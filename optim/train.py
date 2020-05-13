@@ -1,14 +1,13 @@
 import logging
 
 from torch import nn
-from torch.optim.lr_scheduler import CosineAnnealingLR
-from warmup_scheduler import GradualWarmupScheduler
 
 import data, optim, utils
+from nn.label_smooth import LabelSmoothingCE
 from optim.metric import accuracy, AverageMeter
 from optim.test import test
-from utils.debugger import getSignalCatcher
 from utils.config import Config
+from utils.debugger import getSignalCatcher
 
 
 log = logging.getLogger('mpl')
@@ -16,11 +15,11 @@ sigquit = getSignalCatcher('SIGQUIT')
 
 
 def train(cfg, loaders, manager, writers, desc='train'):
-  assert isinstance(loaders, data.loader.DataLoaderTriplet)
+  assert isinstance(loaders, data.dataloaders.DataLoaderTriplet)
   assert isinstance(manager, optim.manager.TrainingManager)
   assert isinstance(writers, utils.tfwriter.TFWriters)
 
-  xent = nn.CrossEntropyLoss()
+  xent = LabelSmoothingCE(smoothing=cfg.optim.lb_smooth)
   result_train = AverageMeter(desc)
   # monitor = MetricMonitor.by_metric(cfg.valid.metric)
 

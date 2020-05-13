@@ -13,3 +13,4 @@
 - [ ] soft labeling
 - [ ] uda 구현
 - [ ] mpl 구현
+- [ ] .yaml prefix로 load

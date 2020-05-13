@@ -14,6 +14,7 @@ optim:
   name: sgd
   nesterov: True
   momentum: 0.9
+  lb_smooth: 0.0
 aug:
   default: true
   cutout: 16

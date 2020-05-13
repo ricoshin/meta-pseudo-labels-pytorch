@@ -1,7 +1,7 @@
 import argparse
 from logging import getLogger
 
-from data.loader import get_dataloader
+from data import get_dataloader
 from optim.manager import TrainingManager
 from optim.test import test
 from optim.train import train
@@ -18,7 +18,7 @@ def main(cfg):
   manager = TrainingManager(cfg)
   writers = TFWriters(
     log_dir=cfg.save_dir,
-    name_list=['train', 'valid'], 
+    name_list=['train', 'valid'],
     deactivated=cfg.debug
     )
 

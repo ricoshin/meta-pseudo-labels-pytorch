@@ -8,7 +8,7 @@ from utils.debugger import getSignalCatcher
 sigquit = getSignalCatcher('SIGQUIT')
 
 def test(cfg, loaders, manager, writers, desc='test'):
-  assert isinstance(loaders, data.loader.DataLoaderTriplet)
+  assert isinstance(loaders, data.dataloaders.DataLoaderTriplet)
   assert isinstance(manager, optim.manager.TrainingManager)
   assert isinstance(writers, utils.tfwriter.TFWriters)
 
