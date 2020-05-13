@@ -11,8 +11,12 @@ A PyTorch implementation of [Meta Pseudo Labels](https://arxiv.org/abs/2003.1058
 
 ## Result (in progress)
 ### CIFAR-10 / WResNet 28x2  
-| WResNet 28x2      | Paper (top-1)    | Our (top-1)     |
-|-------------------|-----------------:|----------------:|
-| Supervised        | 82.14 &plusmn;           |                 |
-| Label Smoothing   | 82.21            |                 |
-| Supervised+MPL    | 83.71            |                 |
+| WResNet 28x2          | Paper (top-1)         | Our (top-1)           |
+|-----------------------|----------------------:|----------------------:|
+| Supervised            | 82.14 &plusmn; 0.25   |                       |
+| Label Smoothing       | 82.21 &plusmn; 0.18   |                       |
+| Supervised + *MPL*    | 83.71 &plusmn; 0.21   |                       |
+| RandAugment           | 85.53 &plusmn; 0.25   |                       |
+| RandAugment + *MPL*   | 87.55 &plusmn; 0.14   |                       |
+| UDA                   | 94.53 &plusmn; 0.18   |                       |
+| UDA + *MPL*           | 96.11 &plusmn; 0.07   |                       |
