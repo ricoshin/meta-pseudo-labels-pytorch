@@ -10,7 +10,7 @@ from torch.autograd import Variable
 import sys
 import numpy as np
 
-log = logging.getLogger('mpl')
+log = logging.getLogger('main')
 
 
 def conv3x3(in_planes, out_planes, stride=1):

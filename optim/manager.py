@@ -1,13 +1,15 @@
 import logging
 import os
+from contextlib import contextmanager
 
 import torch
 from tqdm import tqdm
 
+import data, utils
 from optim import get_model, get_optimizer, get_scheduler
 from optim.metric import MetricMonitor
 
-log = logging.getLogger('mpl')
+log = logging.getLogger('main')
 
 
 class ModelControl:
@@ -29,12 +31,17 @@ class ModelControl:
 
 
 class TrainingManager:
-  def __init__(self, cfg, data_parallel=True):
+  def __init__(self, cfg, loaders, writers, data_parallel=True):
+    assert isinstance(loaders, data.dataloaders.DataLoaderTriplet)
+    assert isinstance(writers, utils.tfwriter.TFWriters)
     self.cfg = cfg
+    self.loaders = loaders
+    self.writers = writers
+    self.monitor = MetricMonitor.by_metric(cfg.valid.metric)
+
     self.step = 0
     self.step_max = cfg.comm.n_steps
     self.pbar = None
-    self.monitor = MetricMonitor.by_metric(cfg.valid.metric)
 
     self.model_ctrls = {}
     model_kwargs = {
@@ -76,6 +83,18 @@ class TrainingManager:
       # f'lr_s: {self.stdn.sched.get_lr()[0]:5.3f}',
       ])
 
+  @property
+  def is_finished(self):
+    return self.step >= self.step_max
+
+  @property
+  def is_last_step(self):
+    return self.step == self.step_max
+
+  @property
+  def is_valid_step(self):
+    return self.step % self.cfg.valid.interval == 0
+
   def train(self, mode=True):
     for ctrl in self.model_ctrls.values():
       ctrl.train(mode)
@@ -90,25 +109,35 @@ class TrainingManager:
     for ctrl in self.model_ctrls.values():
       ctrl.cuda_()
 
-  def step_generator(self, pbar=True):
-    if pbar:
-      self.pbar = tqdm(initial=self.step, total=self.step_max, leave=False)
-    for step in range(self.step, self.step_max):
-      self.step += 1
-      if pbar:
-        self.pbar.update(1)
-      yield step
+  def step_generator(self, mode):
+    assert mode in ['train', 'valid', 'test']
+    if mode == 'train':
+      self.pbar_train = tqdm(initial=self.step, total=self.step_max,
+                             desc=mode, leave=False)
+      for _ in range(self.step_max - self.step):
+        self.step += 1
+        self.pbar_train.update(1)
+        yield self.step
+      self.pbar_train.close()
+    elif mode in ['valid', 'test']:
+      self.pbar_test = tqdm(self.loaders.test, desc=mode, leave=False)
+      for x, y in self.pbar_test:
+        yield x, y
+      self.pbar_test.close()
 
-  def log(self, *args, delimiter=' | '):
-    if self.pbar:
-      self.pbar.clear()  # to avoid afterimage of pbar
-    log.info(delimiter.join(map(str, args)))
+  @contextmanager
+  def logging(self):
+    """to avoid collision with afterimage of the progress bar."""
+    self.pbar_train.clear()
+    yield
+    self.pbar_train.refresh()
 
-  def save(self, cfg):#, status=None):
+  def save(self, cfg, tag, verbose=False):#, status=None):
     if not cfg.save_dir:
       return
     for name, ctrl in self.model_ctrls.items():
-      filepath = os.path.join(cfg.save_dir, name + '.torch')
+      filename = name + f'_{tag}' if tag else ''
+      filepath = os.path.join(cfg.save_dir, name + filename + '.ckpt')
       torch.save({
         'step': self.step,
         'record': self.monitor.best_value,
@@ -116,17 +145,15 @@ class TrainingManager:
         'optim': ctrl.optim.state_dict(),
         'sched': ctrl.sched.state_dict(),
       }, filepath)
-      log.info(f'Saved snapshot to: {filepath}')
-    # if monitor:
-    #   filepath = os.path.join(cfg.save_dir, 'status.torch')
-    #   torch.save(status, filepath)
-    #   log.info(f'Saved status to: {filepath}')
+      if verbose:
+        log.info(f'Saved snapshot to: {filepath}')
 
-  def load_if_available(self, cfg):
+  def load_if_available(self, cfg, tag, verbose=False):
     if not cfg.save_dir:
       return
     for name, ctrl in self.model_ctrls.items():
-      filepath = os.path.join(cfg.save_dir, name + '.torch')
+      filename = name + f'_{tag}' if tag else ''
+      filepath = os.path.join(cfg.save_dir, name + filename + '.ckpt')
       if os.path.exists(filepath):
         loaded = torch.load(filepath)
         self.step = loaded['step']
@@ -134,9 +161,6 @@ class TrainingManager:
         ctrl.model.load_state_dict(loaded['model'])
         ctrl.optim.load_state_dict(loaded['optim'])
         ctrl.sched.load_state_dict(loaded['sched'])
-        log.info(f'Loaded snapshot from: {filepath}')
-        log.info(f'Resume from step {self.step}.')
-
-    # filepath = os.path.join(cfg.save_dir, 'status.torch')
-    # status = torch.load(filepath) if os.path.exists(filepath) else None
-    # return status
+        if verbose:
+          log.info(f'Loaded snapshot from: {filepath}')
+          log.info(f'Resume from step {self.step}.')

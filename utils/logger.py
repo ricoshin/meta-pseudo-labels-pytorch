@@ -1,37 +1,57 @@
 import os
 import logging
+import types
 
-log = logging.getLogger('mpl')
 
-
-def get_formatter():
-  log_fmt = '%(asctime)s [%(levelname)s] %(message)s'
-  date_fmt = '%d/%m/%Y %H:%M:%S'
-  return logging.Formatter(log_fmt, datefmt=date_fmt)
+def get_formatter(name):
+  if name == 'main':
+    log_fmt = f'%(asctime)s [{name}] [%(levelname)s] %(message)s'
+  elif name == 'result':
+    log_fmt = f'%(asctime)s [{name}] [%(levelname)s] %(message)s'
+  else:
+    raise Exception(f'Unknown logger namespace: {name}')
+  return logging.Formatter(log_fmt, datefmt='%d/%m/%y %H:%M')
 
 
 def get_log_level(level):
   return getattr(logging, level.upper())
 
 
-def set_stream_handler(level):
+def set_stream_handler(name, level):
   assert isinstance(level, str)
   # set level
-  log = logging.getLogger('mpl')
+  log = logging.getLogger(name)
   log.setLevel(get_log_level(level))
-  # stdio handler
+  # stdio standard handler
   stream_handler = logging.StreamHandler()
-  stream_handler.setFormatter(get_formatter())
+  stream_handler.setFormatter(get_formatter(name))
   stream_handler.setLevel(get_log_level(level))
+  log.stream_handler = stream_handler
   log.addHandler(stream_handler)
+  # stdio newline handler
+  newline_handler = logging.StreamHandler()
+  newline_handler.setFormatter(fmt='')
+  newline_handler.setLevel(get_log_level(level))
+  # newline() to switch the newline_handler
+  def newline(self, num_lines=1, log_level='info'):
+    # handler swithching trick
+    self.removeHandler(self.stream_handler)
+    self.addHandler(self.newline_handler)
+    for i in range(num_lines):
+        getattr(self, log_level)('')
+    self.removeHandler(self.newline_handler)
+    self.addHandler(self.stream_handler)
+  log.newline_handler = newline_handler
+  log.newline = types.MethodType(newline, log)
 
 
-def set_file_handler(level, save_dir):
+def set_file_handler(name, level, save_dir, filename):
   assert isinstance(level, str)
   # file handler
-  log_file = os.path.join(save_dir, 'log')
+  log = logging.getLogger(name)
+  log_file = os.path.join(save_dir, filename)
   file_handler = logging.FileHandler(log_file)
-  file_handler.setFormatter(get_formatter())
+  file_handler.setFormatter(get_formatter(name))
   file_handler.setLevel(get_log_level(level))
   log.addHandler(file_handler)
 

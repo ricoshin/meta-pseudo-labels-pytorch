@@ -11,7 +11,7 @@ class LabelSmoothingCE(nn.Module):
 
   def forward(self, pred, target):
     if self.smoothing == 0.:
-      return F.nll_loss(F.log_softmax(pred), target)
+      return F.cross_entropy(pred, target)
     # pred: [batch_size, num_classes]
     # target: [batch_size]
     with torch.no_grad():

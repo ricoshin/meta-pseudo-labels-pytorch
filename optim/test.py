@@ -1,30 +1,33 @@
+from tqdm import tqdm
+
 from torch import nn
 
 import data, optim, utils
-from optim.metric import accuracy, AverageMeter
+from optim.metric import topk_accuracy, AverageMeter
 from utils.debugger import getSignalCatcher
-
 
 sigquit = getSignalCatcher('SIGQUIT')
 
-def test(cfg, loaders, manager, writers, desc='test'):
-  assert isinstance(loaders, data.dataloaders.DataLoaderTriplet)
+
+def test(cfg, manager, mode='test'):
   assert isinstance(manager, optim.manager.TrainingManager)
-  assert isinstance(writers, utils.tfwriter.TFWriters)
+  assert mode in ['valid', 'test']
 
   m = manager
-  m.eval()  # batchnorm? saved?
-  # xent = nn.CrossEntropyLoss()
-  result = AverageMeter(desc)
+  if mode == 'test':
+    m.load_if_available(cfg, 'best')
 
-  for step, (x, y) in enumerate(loaders.test):
+  m.eval()
+  result = AverageMeter(mode)
+  for x, y in m.step_generator(mode):
     x, y = x.cuda(), y.cuda()
     # if sigquit.is_active():
     #   import pdb; pdb.set_trace()
     y_pred = m.tchr.model(x)
-    # loss = xent(y_pred, y)
 
-    acc_top1, acc_top5 = accuracy(y_pred, y, (1, 5))
-    result.add(top1=acc_top1, top5=acc_top5, num=y.size(0))
+    acc_top1 = topk_accuracy(y_pred, y, (1,))
+    result.add(top1=acc_top1, num=y.size(0))
+    # acc_top1, acc_top5 = accuracy(y_pred, y, (1, 5))
+    # result.add(top1=acc_top1, top5=acc_top5, num=y.size(0))
 
   return result

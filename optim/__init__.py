@@ -9,7 +9,7 @@ from warmup_scheduler import GradualWarmupScheduler
 
 from nn.wideresnet import WideResNet
 
-log = logging.getLogger('mpl')
+log = logging.getLogger('main')
 
 
 def get_num_classes(dataset_name):

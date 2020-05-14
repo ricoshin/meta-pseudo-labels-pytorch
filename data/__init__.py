@@ -9,11 +9,12 @@ from data.datasets import TransformedDataset, BiTransformedDataset
 from data.dataloaders import InfiniteDataLoader, DataLoaderTriplet
 from utils.config import Config
 
-log = getLogger('mpl')
+log = getLogger('main')
 cfg = Config.get()
 
 
 def get_dataloader(cfg):
+  log.info('Load dataset.')
   data_train, data_test = get_dataset(cfg.dataset, cfg.data_dir)
   # split labeled(supervised) & unlabled(unsupervised) set
   data_sup = Subset(data_train, range(len(data_train))[:cfg.n_labeled])

@@ -3,12 +3,18 @@ from collections import defaultdict, OrderedDict
 
 import torch
 
-log = logging.getLogger('mpl')
+log = logging.getLogger('main')
 
-def accuracy(output, target, topk=(1,)):
+def topk_accuracy(output, target, topk=(1,)):
   """Computes the precision@k for the specified values of k"""
   assert isinstance(output, torch.Tensor)  # [batch_size, n_classes]
   assert isinstance(target, torch.Tensor)  # [batch_size]
+  assert isinstance(topk, (list, tuple, int))
+
+  if isinstance(topk, int):
+    topk = [topk]
+  else:
+    assert len(topk) >= 1
 
   maxk = max(topk)
   batch_size = target.size(0)
@@ -21,7 +27,7 @@ def accuracy(output, target, topk=(1,)):
   for k in topk:
     correct_k = correct[:k].view(-1).float().sum(0)
     res.append(correct_k.mul_(1. / batch_size))
-  return res
+  return res if len(res) > 1 else res[0]
 
 
 class MetricMonitor:
@@ -31,7 +37,7 @@ class MetricMonitor:
     self.best_value = float('inf') if descending else float('-inf')
 
   def __str__(self):
-    return f'best_{self.name}: {self.best_value:4.2%}'
+    return f'Best_{self.name}: {self.best_value:4.2%}'
 
   def is_best(self, value, verbose=True):
     if ((self.descending and value < self.best_value) or
@@ -57,6 +63,9 @@ class AverageMeter:
     self.name = name
     self.values = defaultdict(float)
     self.steps = defaultdict(int)
+
+  def __len__(self):
+    return len(self.values)
 
   def __repr__(self):
     return str(dict(
@@ -96,10 +105,10 @@ class AverageMeter:
       self.values[k] += v * num
       self.steps[k] += num
 
-  def to_dict(self, keys=None):
+  def to_dict(self, *keys):
     out_dict = {}
     for k, v in self.values.items():
-      if keys is not None and k not in keys:
+      if keys and k not in keys:
         continue
       out_dict[k] = v / self.steps[k]
     return out_dict
@@ -112,4 +121,7 @@ class AverageMeter:
     for k in key_list:
       assert k in self.values
       out.append(f'{k}: {_dict[k]:4.2%}')
-    return f'[{self.name}] ' + delimiter.join(out)
+    if out:
+      return f'[{self.name}] ' + delimiter.join(out)
+    else:
+      return f'[{self.name}] Unknown'

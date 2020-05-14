@@ -8,9 +8,17 @@
 - [x] 시그널 디버거 도입
 - [x] cosine annealing 확인 ( + 텐서보드에 쓰기 )
 - [x] 텐서보드
-- [ ] 하이퍼 파라미터 튜닝 코드 구현
-- [ ] 실행 자동화 코드 구현
-- [ ] soft labeling
+- [x] soft labeling
+- [x] .yaml autocompletion 가능하도록 상대경로 입력
+
+- [x] config 내용 stdio에 출력
+- [x] 최종 결과 뿌리는 파일 스트림 생성
+- [x] eval_only 구현
+- [x] 학습 이어갈때는 last load, 테스트할때는 best load (or 선택)
+- [x] valid도 tqdm 출력
+- [x] eval_only의 경우 config도 함께 load
+
 - [ ] uda 구현
 - [ ] mpl 구현
-- [ ] .yaml prefix로 load
+- [ ] 실행 자동화 코드 구현
+- [ ] 하이퍼 파라미터 튜닝 코드 구현 ( ray? cfg 외부변경 가능하도록 )
