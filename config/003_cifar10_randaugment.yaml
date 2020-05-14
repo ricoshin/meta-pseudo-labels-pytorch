@@ -6,16 +6,14 @@ valid:
   interval: 500
 method:
   ##############
-  base: sup  # sup, ra, uda
+  base: ra  # sup, ra, uda
   ##############
   mpl: False
 optim:
   name: sgd
   nesterov: True
   momentum: 0.9
-  ##############
-  lb_smooth: 0.1
-  ##############
+  lb_smooth: 0.0
 aug:
   default: True
   cutout: 16

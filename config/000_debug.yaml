@@ -1,19 +1,19 @@
 model: wresnet_28_2
 dataset: cifar10
-n_labeled: 40000
+n_labeled: 4000
 valid:
   metric: top1 # in ['top1', 'loss']
   interval: 10
 method:
-  base: uda  # sv, ra, uda
-  mpl: true
+  base: uda  # sup, ra, uda
+  mpl: True
 optim:
   name: sgd
   nesterov: True
   momentum: 0.9
   lb_smooth: 0.0
 aug:
-  default: true
+  default: True
   cutout: 16
 comm:
   w_decay: 0.0005

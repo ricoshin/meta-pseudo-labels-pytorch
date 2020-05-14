@@ -136,8 +136,8 @@ class TrainingManager:
     if not cfg.save_dir:
       return
     for name, ctrl in self.model_ctrls.items():
-      filename = name + f'_{tag}' if tag else ''
-      filepath = os.path.join(cfg.save_dir, name + filename + '.ckpt')
+      filename = name + f'_{tag}' if tag else '' + '.pt'
+      filepath = os.path.join(cfg.save_dir, filname)
       torch.save({
         'step': self.step,
         'record': self.monitor.best_value,
@@ -152,8 +152,8 @@ class TrainingManager:
     if not cfg.save_dir:
       return
     for name, ctrl in self.model_ctrls.items():
-      filename = name + f'_{tag}' if tag else ''
-      filepath = os.path.join(cfg.save_dir, name + filename + '.ckpt')
+      filename = name + f'_{tag}' if tag else '' + '.pt'
+      filepath = os.path.join(cfg.save_dir, filname)
       if os.path.exists(filepath):
         loaded = torch.load(filepath)
         self.step = loaded['step']

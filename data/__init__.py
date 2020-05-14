@@ -38,7 +38,7 @@ def get_dataloader(cfg):
     shuffle=True, drop_last=True, **comm_kwargs)
   loader_test = DataLoader(data_test, batch_size=cfg.batch_size.test,
     shuffle=False, drop_last=False, **comm_kwargs)
-  return DataLoaderTriplet(loader_sup, loader_uns, loader_test)
+  return DataLoaderTriplet(sup=loader_sup, uns=loader_uns, test=loader_test)
 
 
 def get_dataset(dataset, data_dir):

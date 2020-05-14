@@ -12,11 +12,11 @@ def get_transforms(dataset, base_method, aug_default, aug_cutout, randaug_args):
   trans_test = []  # transforms for test set
 
   # Advanced augmentation (RandAugment)
-  if base_method == 'sv':
+  if base_method == 'sup':    # Supervised
     pass
-  elif base_method == 'ra':
+  elif base_method == 'ra':   # RandAugment
     trans_sup.append(RandAugment(*randaug_args))
-  elif base_method == 'uda':
+  elif base_method == 'uda':  # UDA
     trans_uns.append(RandAugment(*randaug_args))
   else:
     raise Exception(f'Invalid method.base: {base_method}')
