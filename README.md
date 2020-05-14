@@ -19,4 +19,4 @@ A PyTorch implementation of [Meta Pseudo Labels](https://arxiv.org/abs/2003.1058
 | RandAugment           | 85.53 &plusmn; 0.25   |                       |
 | RandAugment + **MPL** | 87.55 &plusmn; 0.14   |                       |
 | UDA                   | 94.53 &plusmn; 0.18   |                       |
-| UDA + **MPL*          | 96.11 &plusmn; 0.07   |                       |
+| UDA + **MPL**         | 96.11 &plusmn; 0.07   |                       |
