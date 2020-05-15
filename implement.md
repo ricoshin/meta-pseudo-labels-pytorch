@@ -2,6 +2,10 @@
 
 ## Baselines
 ![baseline](./figures/00_baseline.gif =100)
+<img src = "./figures/00_baseline.gif" width="20%">
+<img src = "./figures/00_baseline.gif" width="40%">
+<img src = "./figures/00_baseline.gif" width="60%">
+<img src = "./figures/00_baseline.gif" width="80%">
 ### Supervised
 ![supervised](./figures/01_supervised.png =150)
 ### Label Smoothing
@@ -25,6 +29,6 @@
 ### Phase 1: Updating Student (Supervised + MLP)
 ![two_phases_1](./figures/21_two_phases_1.png)
 ### Phase 2-1: Updating Teacher (Supervised + MLP)
-![two_phases_2](./figures/21_two_phases_2.png)
+![two_phases_2](./figures/22_two_phases_2.png)
 ### Phase 2-2: Updating Teacher (UDA + MLP)
-![two_phases_w_uda](./figures/22_two_phases_2_uda.png)
+![two_phases_w_uda](./figures/23_two_phases_2_uda.png)
