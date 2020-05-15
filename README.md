@@ -14,7 +14,7 @@ A PyTorch implementation of [Meta Pseudo Labels](https://arxiv.org/abs/2003.1058
 $ python main.py --config ./config/<config_file_name> --tag <save_path>
 ```
 
-## Impelmentation Overview
+## Implementation Overview
 To see still images, you can refer to [implement.md](./implement.md).
 ### Baselines
 <img src = "./figures/00_baseline.gif" width="70%">
