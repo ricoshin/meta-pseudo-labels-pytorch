@@ -36,6 +36,12 @@ class Config(DotMap):
       return Config()
 
 
+def sanity_check(cfg):
+  assert cfg.method.base in ['sup', 'ra', 'uda']
+  assert cfg.valid.metric in ['top1', 'loss']
+  return cfg
+
+
 def init_config(parser):
   """Function for initializing coniguration."""
   assert isinstance(parser, ArgumentParser)
@@ -111,4 +117,4 @@ def init_config(parser):
     cfg += Config(yaml.safe_load(f))
   log.info(f'Config file loaded: {yaml_file}')
 
-  return cfg
+  return sanity_check(cfg)

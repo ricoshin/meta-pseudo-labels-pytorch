@@ -1,14 +1,16 @@
 import logging
 
+import torch
 from torch import nn
+from torch.nn.functional import kl_div, softmax, log_softmax
 
 import optim
-from nn.label_smooth import LabelSmoothingCE
+from nn.losses import SmoothCrossEntropyLoss, ConsistencyLoss
 from optim.metric import topk_accuracy, AverageMeter
 from optim.test import test
+from utils import concat
 from utils.config import Config
 from utils.debugger import getSignalCatcher
-
 
 log = logging.getLogger('main')
 sigquit = getSignalCatcher('SIGQUIT')
@@ -21,13 +23,16 @@ def _to_format(*args, delimiter=' | '):
 def train(cfg, manager):
   assert isinstance(manager, optim.manager.TrainingManager)
 
-  xent = LabelSmoothingCE(smoothing=cfg.optim.lb_smooth)
-  result_train = AverageMeter('train')
-  # monitor = MetricMonitor.by_metric(cfg.valid.metric)
-
   m = manager  # for brevity
   m.load_if_available(cfg, tag='last', verbose=True)
   m.train()
+
+  result_train = AverageMeter('train')
+  supervised_loss = SmoothCrossEntropyLoss(factor=cfg.optim.lb_smooth)
+  consistency_loss = ConsistencyLoss()
+
+  is_uda = cfg.method.base == 'uda'
+  is_mpl = cfg.method.mpl
 
   if m.is_finished:
     log.info('No remaining steps.')
@@ -35,17 +40,30 @@ def train(cfg, manager):
     return None, None
 
   for step in m.step_generator(mode='train'):
+    # initialize
     m.train()
     result_train.init()
-    # supervised
-    xs, ys = next(m.loaders.sup)
-    xs, ys = xs.cuda(), ys.cuda()
+    if is_mpl:
+      # TODO
+      pass
 
-    ys_pred = m.tchr.model(xs)
+    if not is_uda:
+      xs, ys = next(m.loaders.sup)
+      xs, ys = xs.cuda(), ys.cuda()
+      ys_pred = m.tchr.model(x)  # forward
+      loss_total = loss_sup = supervised_loss(ys_pred, ys)
+    else:
+      xs, ys = next(m.loaders.sup)
+      xu, xuh = next(m.loaders.uns)
+      x, split_back = concat([xs, xu, xuh], retriever=True)
+      x, ys = x.cuda(), ys.cuda()
+      y_pred = m.tchr.model(x)  # forward
+      ys_pred, yu_pred, yuh_pred = split_back(y_pred)
+      loss_sup = supervised_loss(ys_pred, ys)
+      loss_cnst = consistency_loss(yu_pred, yuh_pred)
+      loss_total = loss_sup + loss_cnst * cfg.uda.factor
 
-    loss = xent(ys_pred, ys)
-    loss.backward()
-    # import pdb; pdb.set_trace()
+    loss_total.backward()
     m.tchr.optim.step()
     m.tchr.optim.zero_grad()
     m.tchr.sched.step()

@@ -28,14 +28,14 @@
 <img src = "./figures/13_uda_mpl.png" width="70%">
 
 
-## Two Phases Traing of MPL
+## Two Phases Training of MPL
 <img src = "./figures/20_two_phases.gif" width="70%">
 
-### Phase 1: Updating Student (Supervised + MLP)
+### Phase 1: Updating Student (Supervised + MPL)
 <img src = "./figures/21_two_phases_1.png" width="70%">
 
-### Phase 2-1: Updating Teacher (Supervised + MLP)
+### Phase 2-A: Updating Teacher (Supervised + MPL)
 <img src = "./figures/22_two_phases_2.png" width="70%">
 
-### Phase 2-2: Updating Teacher (UDA + MLP)
+### Phase 2-B: Updating Teacher (UDA + MPL)
 <img src = "./figures/23_two_phases_2_uda.png" width="70%">
