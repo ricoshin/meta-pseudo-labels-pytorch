@@ -1,34 +1,41 @@
 # Implementation Details
 
 ## Baselines
-![baseline](./figures/00_baseline.gif =100)
-<img src = "./figures/00_baseline.gif" width="20%">
-<img src = "./figures/00_baseline.gif" width="40%">
-<img src = "./figures/00_baseline.gif" width="60%">
-<img src = "./figures/00_baseline.gif" width="80%">
+<img src = "./figures/00_baseline.gif" width="70%">
 ### Supervised
-![supervised](./figures/01_supervised.png =150)
+<img src = "./figures/01_supervised.png" width="70%">
 ### Label Smoothing
-![label_smoothing](./figures/02_label_smoothing.png =200)
+![label_smoothing]()
+<img src = "./figures/02_label_smoothing.png" width="70%">
 ### RandAugment
-![randaugment](./figures/03_randaugment.png)
+![randaugment]()
+<img src = "./figures/03_randaugment.png" width="70%">
 ### UDA
-![uda](./figures/04_uda.png)
+![uda]()
+<img src = "./figures/04_uda.png" width="70%">
 
 ## Baseline + MPL
-![baseline_mpl](./figures/10_baseline_mpl.gif)
+![baseline_mpl]()
+<img src = "./figures/10_baseline_mpl.gif" width="70%">
 ### Supervised + MPL
-![supervised_mpl](./figures/11_supervised_mpl.png)
+![supervised_mpl]()
+<img src = "./figures/11_supervised_mpl.png" width="70%">
 ### RandAugment + MPL
-![randaugment_mpl](./figures/12_randaugment_mpl.png)
+![randaugment_mpl]()
+<img src = "./figures/12_randaugment_mpl.png" width="70%">
 ### UDA + MPL
-![uda_mpl](./figures/13_uda_mpl.png)
+![uda_mpl]()
+<img src = "./figures/13_uda_mpl.png" width="70%">
 
 ## Two Phases Traing of MPL
-![two_phases](./figures/20_two_phases.gif)
+![two_phases]()
+<img src = "./figures/20_two_phases.gif" width="70%">
 ### Phase 1: Updating Student (Supervised + MLP)
-![two_phases_1](./figures/21_two_phases_1.png)
+![two_phases_1]()
+<img src = "./figures/21_two_phases_1.png" width="70%">
 ### Phase 2-1: Updating Teacher (Supervised + MLP)
-![two_phases_2](./figures/22_two_phases_2.png)
+![two_phases_2]()
+<img src = "./figures/22_two_phases_2.png" width="70%">
 ### Phase 2-2: Updating Teacher (UDA + MLP)
-![two_phases_w_uda](./figures/23_two_phases_2_uda.png)
+![two_phases_w_uda]()
+<img src = "./figures/23_two_phases_2_uda.png" width="70%">
