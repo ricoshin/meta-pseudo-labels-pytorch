@@ -17,6 +17,7 @@
 - [x] valid도 tqdm 출력
 - [x] eval_only의 경우 config도 함께 load
 
+- [ ] 현재 어떤 태그로 훈련 중인지 콘솔에 지속적으로 출력
 - [ ] default = simple + cutout
 - [ ] 실행 자동화 코드 구현
 - [ ] 하이퍼 파라미터 튜닝 코드 구현 ( ray? cfg 외부변경 가능하도록 )
@@ -28,4 +29,4 @@
 - [x] Label Smoothing
 - [x] RandAugment
 - [x] UDA
-- [ ] MPL
+- [x] MPL

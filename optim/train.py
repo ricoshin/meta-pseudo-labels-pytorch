@@ -5,7 +5,8 @@ from torch import nn
 from torch.nn.functional import kl_div, softmax, log_softmax
 
 import optim
-from nn.losses import SmoothCrossEntropyLoss, ConsistencyLoss
+from nn.losses import (SmoothableHardLabelCELoss, SoftLabelCELoss,
+                       KLDivergenceLoss)
 from optim.metric import topk_accuracy, AverageMeter
 from optim.test import test
 from utils import concat
@@ -27,12 +28,14 @@ def train(cfg, manager):
   m.load_if_available(cfg, tag='last', verbose=True)
   m.train()
 
-  result_train = AverageMeter('train')
-  supervised_loss = SmoothCrossEntropyLoss(factor=cfg.optim.lb_smooth)
-  consistency_loss = ConsistencyLoss()
-
   is_uda = cfg.method.base == 'uda'
   is_mpl = cfg.method.mpl
+
+  result_train = AverageMeter('train')
+  supervised_loss = SmoothableHardLabelCELoss(factor=cfg.optim.lb_smooth)
+  hard_xent_loss = SmoothableHardLabelCELoss(factor=0.)
+  consistency_loss = KLDivergenceLoss() if is_uda else None
+  soft_xent_loss = SoftLabelCELoss() if is_mpl else None
 
   if m.is_finished:
     log.info('No remaining steps.')
@@ -43,31 +46,41 @@ def train(cfg, manager):
     # initialize
     m.train()
     result_train.init()
-    if is_mpl:
-      # TODO
-      pass
+    xs, ys = next(m.loaders.sup)
+    xs, ys = xs.cuda(), ys.cuda()
+    if is_uda or is_mpl:
+      xu, xuh = next(m.loaders.uns)
+      xu, xuh = xu.cuda(), xuh.cuda()
+    else:
+      xu, xuh = None, None
 
     if not is_uda:
-      xs, ys = next(m.loaders.sup)
-      xs, ys = xs.cuda(), ys.cuda()
-      ys_pred = m.tchr.model(x)  # forward
-      loss_total = loss_sup = supervised_loss(ys_pred, ys)
+      ys_pred_t = m.tchr.model(xs)  # forward
+      loss_total = loss_sup = supervised_loss(ys_pred_t, ys)
     else:
-      xs, ys = next(m.loaders.sup)
-      xu, xuh = next(m.loaders.uns)
       x, split_back = concat([xs, xu, xuh], retriever=True)
-      x, ys = x.cuda(), ys.cuda()
       y_pred = m.tchr.model(x)  # forward
-      ys_pred, yu_pred, yuh_pred = split_back(y_pred)
-      loss_sup = supervised_loss(ys_pred, ys)
-      loss_cnst = consistency_loss(yu_pred, yuh_pred)
+      ys_pred_t, yu_pred_t, yuh_pred_t = split_back(y_pred)
+      loss_sup = supervised_loss(ys_pred_t, ys)
+      loss_cnst = consistency_loss(yuh_pred_t, yu_pred_t.detach())
       loss_total = loss_sup + loss_cnst * cfg.uda.factor
 
-    loss_total.backward()
-    m.tchr.optim.step()
-    m.tchr.optim.zero_grad()
-    m.tchr.sched.step()
+    if is_mpl:
+      yu_pred_s = m.stdn.model(xu)
+      if not is_uda:
+        yu_pred_t = m.tchr.model(xu)
+      loss_mpl_s = soft_xent_loss(yu_pred_s, yu_pred_t)
+      loss_mpl_s.backward(retain_graph=True, create_graph=True)
+      m.stdn.step_all()
 
+      ys_pred_s = m.stdn.model(xs)
+      loss_mpl_t = hard_xent_loss(ys_pred_s, ys)
+      loss_total += loss_mpl_t
+
+    loss_total.backward()
+    m.tchr.step_all()
+
+    ys_pred = ys_pred_t if not is_mpl else ys_pred_s  # stnt acc when mpl.
     acc_top1 = topk_accuracy(ys_pred, ys, (1,))
     result_train.add(top1=acc_top1, num=ys.size(0))
     # acc_top1, acc_top5 = topk_accuracy(ys_pred, ys, (1, 5))

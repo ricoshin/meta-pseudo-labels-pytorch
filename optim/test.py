@@ -23,7 +23,10 @@ def test(cfg, manager, mode='test'):
     x, y = x.cuda(), y.cuda()
     # if sigquit.is_active():
     #   import pdb; pdb.set_trace()
-    y_pred = m.tchr.model(x)
+    if not cfg.method.mpl:
+      y_pred = m.tchr.model(x)
+    else:
+      y_pred = m.stdn.model(x)
 
     acc_top1 = topk_accuracy(y_pred, y, (1,))
     result.add(top1=acc_top1, num=y.size(0))

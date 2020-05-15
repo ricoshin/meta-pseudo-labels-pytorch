@@ -29,6 +29,11 @@ class ModelControl:
     self.model.eval()
     return self
 
+  def step_all(self):
+    self.optim.step()
+    self.optim.zero_grad()
+    self.sched.step()
+
 
 class TrainingManager:
   def __init__(self, cfg, loaders, writers, data_parallel=True):
@@ -77,6 +82,7 @@ class TrainingManager:
   def strf(self, delimiter=' | '):
     return delimiter.join([
       f'step: {self.step:7d}/{self.step_max:7d}',
+      # f'dir: {self.cfg.save_dir}',
       f'base: {self.cfg.method.base}',
       f'mpl: {self.cfg.method.mpl}',
       f'lr_t: {self.tchr.sched.get_lr()[0]:5.3f}',

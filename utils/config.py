@@ -62,7 +62,7 @@ def init_config(parser):
 
   # SAVE_DIR
   if not cfg.tag:
-    log.warning(f"Nothing will be saved unless '--tag' is provided.")
+    log.warning(f"Nothing will be saved unless '--tag' is given.")
     cfg.save_dir = ''
   else:
     # save_dir: save_dir/tag

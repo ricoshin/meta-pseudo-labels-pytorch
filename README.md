@@ -9,6 +9,23 @@ A PyTorch implementation of [Meta Pseudo Labels](https://arxiv.org/abs/2003.1058
 * [DotMap](https://github.com/drgrib/dotmap)
 * [pytorch-gradual-warmup-lr](https://github.com/ildoonet/pytorch-gradual-warmup-lr)
 
+## How to Run
+```
+$ python main.py --config ./config/<config_file_name> --tag <save_path>
+# e.g. python main.py --config ./config/005_cifar10_uda_mpl.yaml --tag 0515/uda_mpl
+```
+
+## Impelmentation Overview
+To see still images, you can refer to [implement.md](./implement.md).
+### Baselines
+<img src = "./figures/00_baseline.gif" width="70%">
+
+### Baseline + MPL
+<img src = "./figures/10_baseline_mpl.gif" width="70%">
+
+### Two Phases Training of MPL
+<img src = "./figures/20_two_phases.gif" width="70%">
+
 ## Result (in progress)
 ### CIFAR-10 / WResNet 28x2  
 | WResNet 28x2          | Paper (top-1)         | Our (top-1)           |
