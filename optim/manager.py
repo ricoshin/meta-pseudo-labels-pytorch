@@ -142,7 +142,7 @@ class TrainingManager:
     if not cfg.save_dir:
       return
     for name, ctrl in self.model_ctrls.items():
-      filename = name + f'_{tag}' if tag else '' + '.pt'
+      filename = name + (f'_{tag}' if tag else '') + '.pt'
       filepath = os.path.join(cfg.save_dir, filename)
       torch.save({
         'step': self.step,
@@ -152,13 +152,13 @@ class TrainingManager:
         'sched': ctrl.sched.state_dict(),
       }, filepath)
       if verbose:
-        log.info(f'Saved snapshot to: {filename}')
+        log.info(f'Saved snapshot to: {filepath}')
 
   def load_if_available(self, cfg, tag, verbose=False):
     if not cfg.save_dir:
       return
     for name, ctrl in self.model_ctrls.items():
-      filename = name + f'_{tag}' if tag else '' + '.pt'
+      filename = name + (f'_{tag}' if tag else '') + '.pt'
       filepath = os.path.join(cfg.save_dir, filename)
       if os.path.exists(filepath):
         loaded = torch.load(filepath)
@@ -168,5 +168,5 @@ class TrainingManager:
         ctrl.optim.load_state_dict(loaded['optim'])
         ctrl.sched.load_state_dict(loaded['sched'])
         if verbose:
-          log.info(f'Loaded snapshot from: {filename}')
+          log.info(f'Loaded snapshot from: {filepath}')
           log.info(f'Resume from step {self.step}.')
