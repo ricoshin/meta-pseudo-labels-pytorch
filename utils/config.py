@@ -15,7 +15,7 @@ log = logging.getLogger('main')
 
 
 class Config(DotMap):
-  """A Singleton class for managing global configuration."""
+  """A singleton class for managing global configuration."""
   _instance = None
 
   def __add__(self, other):

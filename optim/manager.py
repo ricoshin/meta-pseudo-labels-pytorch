@@ -152,7 +152,7 @@ class TrainingManager:
         'sched': ctrl.sched.state_dict(),
       }, filepath)
       if verbose:
-        log.info(f'Saved snapshot to: {filepath}')
+        log.info(f'Saved snapshot to: {filename}')
 
   def load_if_available(self, cfg, tag, verbose=False):
     if not cfg.save_dir:
@@ -168,5 +168,5 @@ class TrainingManager:
         ctrl.optim.load_state_dict(loaded['optim'])
         ctrl.sched.load_state_dict(loaded['sched'])
         if verbose:
-          log.info(f'Loaded snapshot from: {filepath}')
+          log.info(f'Loaded snapshot from: {filename}')
           log.info(f'Resume from step {self.step}.')

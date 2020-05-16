@@ -4,7 +4,8 @@ from torch import nn
 
 
 class SmoothableHardLabelCELoss(nn.Module):
-  """Cross entropy loss that can deliver label smoothing effect. As with torch.nn.CrossEntropyLoss, it take hard integer labels as a target."""
+  """Cross entropy loss that can deliver label smoothing effect. As with
+   torch.nn.CrossEntropyLoss, it take hard integer labels as a target."""
   def __init__(self, factor=0.0, dim=-1):
     super(SmoothableHardLabelCELoss, self).__init__()
     self.factor = factor
