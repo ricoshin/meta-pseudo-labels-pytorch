@@ -1,16 +1,14 @@
 import os
 import logging
 import types
+from utils.color import Color
 
 
-def get_formatter(name):
-  if name == 'main':
-    log_fmt = f'%(asctime)s [{name}] [%(levelname)s] %(message)s'
-  elif name == 'result':
-    log_fmt = f'%(asctime)s [{name}] [%(levelname)s] %(message)s'
-  else:
-    raise Exception(f'Unknown logger namespace: {name}')
-  return logging.Formatter(log_fmt, datefmt='%d/%m/%y %H:%M')
+def formatter_kwargs():
+  return dict(
+    fmt="%(asctime)s %(msg)s",
+    datefmt='%d/%m/%y %H:%M'
+  )
 
 
 def get_log_level(level):
@@ -24,7 +22,8 @@ def set_stream_handler(name, level):
   log.setLevel(get_log_level(level))
   # stdio standard handler
   stream_handler = logging.StreamHandler()
-  stream_handler.setFormatter(get_formatter(name))
+  formatter = MyFormatter(**formatter_kwargs())
+  stream_handler.setFormatter(formatter)
   stream_handler.setLevel(get_log_level(level))
   log.stream_handler = stream_handler
   log.addHandler(stream_handler)
@@ -51,24 +50,32 @@ def set_file_handler(name, level, save_dir, filename):
   log = logging.getLogger(name)
   log_file = os.path.join(save_dir, filename)
   file_handler = logging.FileHandler(log_file)
-  file_handler.setFormatter(get_formatter(name))
+  formatter = MyFormatter(**formatter_kwargs())
+  file_handler.setFormatter(formatter)
   file_handler.setLevel(get_log_level(level))
   log.addHandler(file_handler)
 
 
-# class MyFormatter(logging.Formatter):
-#   info_fmt = '[%(levelname)s] %(message)s'
-#   else_fmt = '[%(levelname)s] %(message)s'
-#
-#   def __init__(self, fmt="%(message)s"):
-#     logging.Formatter.__init__(self, fmt)
-#
-#   def format(self, record):
-#     format_orig = self._fmt
-#     if record.levelno == logging.INFO:
-#       self._fmt = MyFormatter.info_fmt
-#     else:
-#       self._fmt = MyFormatter.else_fmt
-#     result = logging.Formatter.format(self, record)
-#     self._fmt = format_orig
-#     return result
+class MyFormatter(logging.Formatter):
+  def format(self, record):
+    level_name = None
+
+    if record.levelno == logging.DEBUG:
+      level_name = f'{Color.VIOLET}[DEBUG]{Color.END}'
+    elif record.levelno == logging.WARNING:
+      level_name = f'{Color.RED}[WARNING]{Color.END}'
+    elif record.levelno == logging.ERROR:
+      level_name = f'{Color.RED}[ERROR]{Color.END}'
+    elif record.levelno == logging.CRITICAL:
+      level_name = f'{Color.RED}[CRITICAL]{Color.END}'
+
+    if level_name:
+      format_orig = self._style._fmt
+      self._style._fmt = f'%(asctime)s {level_name} %(msg)s'
+
+    result = logging.Formatter.format(self, record)
+
+    if level_name:
+      self._style._fmt = format_orig
+
+    return result

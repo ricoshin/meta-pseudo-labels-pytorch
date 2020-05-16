@@ -10,6 +10,7 @@ from argparse import ArgumentParser
 from dotmap import DotMap
 
 from utils import logger
+from utils.color import Color
 
 log = logging.getLogger('main')
 
@@ -73,7 +74,7 @@ def init_config(parser):
         # remove previous files and go from the scratch
         assert not cfg.test_only, 'Test cannot be performed from scratch!'
         log.warning(f"'--from_scratch' mode on. "
-                     'Press [ENTER] to remove the previous files.')
+                    f'Press [ENTER] to remove the previous files.')
         input()  # waiting for ENTER
         shutil.rmtree(cfg.save_dir, ignore_errors=True)
         log.warning(f'Removed previous dirs and files.')

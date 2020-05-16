@@ -31,7 +31,7 @@ def train(cfg, manager):
   is_uda = cfg.method.base == 'uda'
   is_mpl = cfg.method.mpl
 
-  result_train = AverageMeter('train')
+  out_train = AverageMeter('train')
   supervised_loss = SmoothableHardLabelCELoss(factor=cfg.optim.lb_smooth)
   hard_xent_loss = SmoothableHardLabelCELoss(factor=0.)
   consistency_loss = KLDivergenceLoss() if is_uda else None
@@ -45,7 +45,7 @@ def train(cfg, manager):
   for step in m.step_generator(mode='train'):
     # initialize
     m.train()
-    result_train.init()
+    out_train.init()
     xs, ys = next(m.loaders.sup)
     xs, ys = xs.cuda(), ys.cuda()
     if is_uda or is_mpl:
@@ -82,24 +82,26 @@ def train(cfg, manager):
 
     ys_pred = ys_pred_t if not is_mpl else ys_pred_s  # stnt acc when mpl.
     acc_top1 = topk_accuracy(ys_pred, ys, (1,))
-    result_train.add(top1=acc_top1, num=ys.size(0))
+    out_train.add(top1=acc_top1, num=ys.size(0))
     # acc_top1, acc_top5 = topk_accuracy(ys_pred, ys, (1, 5))
-    # result_train.add(top1=acc_top1, top5=acc_top5, num=ys.size(0))
+    # out_train.add(top1=acc_top1, top5=acc_top5, num=ys.size(0))
 
     if not (m.is_valid_step or m.is_finished):
       continue
 
     # validation
-    result_valid = test(cfg, manager, 'valid')
+    out_valid = test(cfg, manager, 'valid')
+    m.monitor.watch(out_valid[cfg.valid.metric])
 
     with m.logging():
       m.save(cfg, tag='last')
-      if m.monitor.is_best(result_valid[cfg.valid.metric]):
-        m.save(cfg, tag='best', verbose=True)
-      log.info(_to_format(m, result_train, result_valid, m.monitor))
+      if m.monitor.is_best:
+        m.save(cfg, tag='best')
+        mark_record = ' [<--record]'
+      log.info(_to_format(m, out_train, out_valid, m.monitor) + mark_record)
 
-    m.writers.add_scalars('train', result_train.to_dict(), step)
-    m.writers.add_scalars('valid', result_valid.to_dict(), step)
+    m.writers.add_scalars('train', out_train.to_dict(), step)
+    m.writers.add_scalars('valid', out_valid.to_dict(), step)
     m.writers.add_scalars('train', {'lr': m.tchr.sched.get_lr()[0]}, step)
 
-  return result_train, result_valid
+  return out_train, out_valid

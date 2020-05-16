@@ -3,6 +3,8 @@ from collections import defaultdict, OrderedDict
 
 import torch
 
+from utils.color import Color
+
 log = logging.getLogger('main')
 
 def topk_accuracy(output, target, topk=(1,)):
@@ -31,31 +33,36 @@ def topk_accuracy(output, target, topk=(1,)):
 
 
 class MetricMonitor:
-  def __init__(self, name, descending=False):
-    self.name = name
+  def __init__(self, name, descending=False, prefix=''):
+    assert name in ['loss', 'top1']
+    self.name = prefix + '_' + name
     self.descending = descending
     self.best_value = float('inf') if descending else float('-inf')
+    self.is_best = False
 
   def __str__(self):
-    return f'Best_{self.name}: {self.best_value:4.2%}'
+    return f'best_{self.name}: {self.best_value:4.2%}'
 
-  def is_best(self, value, verbose=True):
+  def watch(self, value, verbose=False):
     if ((self.descending and value < self.best_value) or
         (not self.descending and value > self.best_value)):
       self.best_value = value
-      log.info(f'Best {self.name}: {self.best_value:4.2%} !')
+      self.is_best = True
+      if verbose:
+        log.info(f'Best {self.name}: {self.best_value:4.2%} !')
       return True
+    self.is_best = False
     return False
 
   @classmethod
-  def by_metric(cls, name):
-    assert isinstance(name, str)
-    if name == 'loss':
-      return cls(name, True)
-    elif name in ['top1', 'top5']:
-      return cls(name, False)
+  def by_metric(cls, metric, prefix=''):
+    assert isinstance(metric, str)
+    if metric == 'loss':
+      return cls(name=metric, descending=True, prefix=prefix)
+    elif metric == 'top1':
+      return cls(name=metric, descending=False, prefix=prefix)
     else:
-      raise Exception(f'Invalid metric name: {name}')
+      raise Exception(f'Invalid metric name: {metric}')
 
 
 class AverageMeter:
@@ -120,8 +127,5 @@ class AverageMeter:
       key_list = self.values.keys()
     for k in key_list:
       assert k in self.values
-      out.append(f'{k}: {_dict[k]:4.2%}')
-    if out:
-      return f'[{self.name}] ' + delimiter.join(out)
-    else:
-      return f'[{self.name}] Unknown'
+      out.append(f'{self.name}_{k}: {_dict[k]:4.2%}')
+    return delimiter.join(out)

@@ -6,6 +6,7 @@ import torch
 from tqdm import tqdm
 
 import data, utils
+from utils.color import Color
 from optim import get_model, get_optimizer, get_scheduler
 from optim.metric import MetricMonitor
 
@@ -42,7 +43,8 @@ class TrainingManager:
     self.cfg = cfg
     self.loaders = loaders
     self.writers = writers
-    self.monitor = MetricMonitor.by_metric(cfg.valid.metric)
+    self.monitor = MetricMonitor.by_metric(
+      metric=cfg.valid.metric, prefix='valid')
 
     self.step = 0
     self.step_max = cfg.comm.n_steps
@@ -80,11 +82,11 @@ class TrainingManager:
     return self.strf()
 
   def strf(self, delimiter=' | '):
+    mpl_postfix = '_mpl' if self.cfg.method.mpl else ''
     return delimiter.join([
+      f'{Color.SELECTED}{self.cfg.tag}{Color.END}',
+      f'method: {self.cfg.method.base +  mpl_postfix}',
       f'step: {self.step:7d}/{self.step_max:7d}',
-      # f'dir: {self.cfg.save_dir}',
-      f'base: {self.cfg.method.base}',
-      f'mpl: {self.cfg.method.mpl}',
       f'lr_t: {self.tchr.sched.get_lr()[0]:5.3f}',
       # f'lr_s: {self.stdn.sched.get_lr()[0]:5.3f}',
       ])
@@ -117,9 +119,10 @@ class TrainingManager:
 
   def step_generator(self, mode):
     assert mode in ['train', 'valid', 'test']
+    # desc = mode + cfg.save_dir
     if mode == 'train':
       self.pbar_train = tqdm(initial=self.step, total=self.step_max,
-                             desc=mode, leave=False)
+        desc=f'[{mode}]', postfix=self.cfg.save_dir, leave=False)
       for _ in range(self.step_max - self.step):
         self.step += 1
         self.pbar_train.update(1)
@@ -141,6 +144,7 @@ class TrainingManager:
   def save(self, cfg, tag, verbose=False):#, status=None):
     if not cfg.save_dir:
       return
+    logs = []
     for name, ctrl in self.model_ctrls.items():
       filename = name + (f'_{tag}' if tag else '') + '.pt'
       filepath = os.path.join(cfg.save_dir, filename)
@@ -151,12 +155,15 @@ class TrainingManager:
         'optim': ctrl.optim.state_dict(),
         'sched': ctrl.sched.state_dict(),
       }, filepath)
-      if verbose:
-        log.info(f'Saved snapshot to: {filepath}')
+      logs.append(filepath)
+    if logs:
+      log_level = 'info' if verbose else 'debug'
+      getattr(log, log_level)(f'Saved snapshot to: {", ".join(logs)}')
 
   def load_if_available(self, cfg, tag, verbose=False):
     if not cfg.save_dir:
       return
+    logs = []
     for name, ctrl in self.model_ctrls.items():
       filename = name + (f'_{tag}' if tag else '') + '.pt'
       filepath = os.path.join(cfg.save_dir, filename)
@@ -167,6 +174,8 @@ class TrainingManager:
         ctrl.model.load_state_dict(loaded['model'])
         ctrl.optim.load_state_dict(loaded['optim'])
         ctrl.sched.load_state_dict(loaded['sched'])
-        if verbose:
-          log.info(f'Loaded snapshot from: {filepath}')
-          log.info(f'Resume from step {self.step}.')
+        logs.append(filepath)
+    if logs:
+      log_level = 'info' if verbose else 'debug'
+      getattr(log, log_level)(f'Loaded snapshot from: {", ".join(logs)}')
+      getattr(log, log_level)(f'Resume from step {self.step}.')
