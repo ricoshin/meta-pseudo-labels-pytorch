@@ -122,7 +122,7 @@ class TrainingManager:
     # desc = mode + cfg.save_dir
     if mode == 'train':
       self.pbar_train = tqdm(initial=self.step, total=self.step_max,
-        desc=f'[{mode}]', postfix=self.cfg.save_dir, leave=False)
+        desc=f'[{mode}]', leave=False)
       for _ in range(self.step_max - self.step):
         self.step += 1
         self.pbar_train.update(1)
