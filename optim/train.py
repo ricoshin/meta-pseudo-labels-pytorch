@@ -72,6 +72,7 @@ def train(cfg, manager):
       loss_mpl_s = soft_xent_loss(yu_pred_s, yu_pred_t)
       loss_mpl_s.backward(retain_graph=True, create_graph=True)
       m.stdn.step_all()
+      m.tchr.model.zero_grad()  # teacher should not be affected
 
       ys_pred_s = m.stdn.model(xs)
       loss_mpl_t = hard_xent_loss(ys_pred_s, ys)
