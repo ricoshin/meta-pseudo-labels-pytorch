@@ -17,7 +17,7 @@ log = logging.getLogger('main')
 sigquit = getSignalCatcher('SIGQUIT')
 
 
-def _to_format(*args, delimiter=' | '):
+def _to_fmt(*args, delimiter=' | '):
   return delimiter.join(map(str, args))
 
 
@@ -98,8 +98,8 @@ def train(cfg, manager):
       m.save(cfg, tag='last')
       if m.monitor.is_best:
         m.save(cfg, tag='best')
-        mark_record = ' [<--record]'
-      log.info(_to_format(m, out_train, out_valid, m.monitor) + mark_record)
+      mark_record = ' [<--record]' if m.monitor.is_best else ''
+      log.info(_to_fmt(m, out_train, out_valid, m.monitor) + mark_record)
 
     m.writers.add_scalars('train', out_train.to_dict(), step)
     m.writers.add_scalars('valid', out_valid.to_dict(), step)
