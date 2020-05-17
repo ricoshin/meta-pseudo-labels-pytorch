@@ -15,17 +15,20 @@ cfg = Config.get()
 
 def get_dataloader(cfg):
   log.info('Load dataset.')
+  need_uns = cfg.method.base == 'uda' or cfg.method.mpl
   data_train, data_test = get_dataset(cfg.dataset, cfg.data_dir)
   # split labeled(supervised) & unlabled(unsupervised) set
   data_sup = Subset(data_train, range(len(data_train))[:cfg.n_labeled])
-  data_uns = Subset(data_train, range(len(data_train))[cfg.n_labeled:])
+  if need_uns:
+    data_uns = Subset(data_train, range(len(data_train))[cfg.n_labeled:])
   # different transforms(augumentation) for each dataset
   trans_sup, trans_uns, trans_test = get_transforms(
     cfg.dataset, cfg.method.base, cfg.aug.default, cfg.aug.cutout,
     randaug_args=(cfg.randaug.n, cfg.randaug.m))
   # attach transforms to the datasets
   data_sup = TransformedDataset(data_sup, trans_sup)
-  data_uns = BiTransformedDataset(data_uns, trans_sup, trans_uns)
+  if need_uns:
+    data_uns = BiTransformedDataset(data_uns, trans_sup, trans_uns)
   data_test = TransformedDataset(data_test, trans_test)
   # data loader
   comm_kwargs = dict(
@@ -34,8 +37,11 @@ def get_dataloader(cfg):
     )
   loader_sup = InfiniteDataLoader(data_sup, batch_size=cfg.batch_size.sup,
     shuffle=True, drop_last=True, **comm_kwargs)
-  loader_uns = InfiniteDataLoader(data_uns, batch_size=cfg.batch_size.uns,
-    shuffle=True, drop_last=True, **comm_kwargs)
+  if need_uns:
+    loader_uns = InfiniteDataLoader(data_uns, batch_size=cfg.batch_size.uns,
+      shuffle=True, drop_last=True, **comm_kwargs)
+  else:
+    loader_uns = None
   loader_test = DataLoader(data_test, batch_size=cfg.batch_size.test,
     shuffle=False, drop_last=False, **comm_kwargs)
   return DataLoaderTriplet(sup=loader_sup, uns=loader_uns, test=loader_test)

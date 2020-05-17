@@ -1,0 +1,18 @@
+# 002_cifar10_supervised.yaml
+model: wresnet_28_2
+dataset: cifar10
+n_labeled: 4000
+valid:
+  metric: top1
+  interval: 500
+method:
+  base: sup
+  mpl: False
+batch_size:
+  sup: 128
+  # uns: 128
+  test: 128
+stdn:
+  lr: 0.3
+  batch: 128
+  dropout: 0.35

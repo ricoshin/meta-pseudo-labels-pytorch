@@ -23,15 +23,22 @@ def _to_fmt(*args, delimiter=' | '):
 
 def train(cfg, manager):
   assert isinstance(manager, optim.manager.TrainingManager)
-
-  m = manager  # for brevity
-  m.load_if_available(cfg, tag='last', verbose=True)
-  m.train()
-
+  # for brevity
+  m = manager
   is_uda = cfg.method.base == 'uda'
   is_mpl = cfg.method.mpl
-
-  out_train = AverageMeter('train')
+  # load model if possible
+  m.load_if_available(cfg, tag='last', verbose=True)
+  if m.is_finished:
+    log.info('No remaining steps.')
+    # return empty results
+    return None, None
+  # baseline: netA only / mpl: netA(teacher), netB(student)
+  if cfg.method.mpl:
+    netA, netB = m.tchr, m.stdn
+  else:
+    netA, netB = m.stdn, None
+  # losses
   smooth_supervised_loss = LabelSmoothableCELoss(factor=cfg.optim.lb_smooth)
   uda_supervised_loss = TrainingSignalAnnealingCELoss(cfg) if is_uda else None
   uda_consistency_loss = ConsistencyKLDLoss(
@@ -40,65 +47,69 @@ def train(cfg, manager):
     ) if is_uda else None
   mpl_stdn_loss = SoftLabelCEWithLogitsLoss() if is_mpl else None
   mpl_tchr_loss = LabelSmoothableCELoss(factor=0.) if is_mpl else None
-
-  if m.is_finished:
-    log.info('No remaining steps.')
-    # return empty results
-    return None, None
+  # average tracker
+  out_train = AverageMeter('train')
 
   for step in m.step_generator(mode='train'):
-    # initialize
     m.train()
-    out_train.init()
+    # out_train.init()  # uncomment this if you want to see only the last metric
+
+    # labeled(supervised) data
     xs, ys = next(m.loaders.sup)
     xs, ys = xs.cuda(), ys.cuda()
     if is_uda or is_mpl:
+      # unlabeled(unsupervised) data
       xu, xuh = next(m.loaders.uns)
       xu, xuh = xu.cuda(), xuh.cuda()
-    else:
-      xu, xuh = None, None
 
+    # supervised, randaugment
     if not is_uda:
-      ys_pred_t = m.tchr.model(xs)  # forward
-      loss_total = loss_sup = smooth_supervised_loss(ys_pred_t, ys)
+      assert cfg.method.base in ['sup', 'ra']
+      ys_pred_a = netA.model(xs)  # forward
+      loss_total = loss_sup = smooth_supervised_loss(ys_pred_a, ys)
+    # uda
     else:
+      # model feeding
       x, split_back = concat([xs, xu, xuh], retriever=True)
-      y_pred = m.tchr.model(x)  # forward
-      ys_pred_t, yu_pred_t, yuh_pred_t = split_back(y_pred)
-      loss_sup = uda_supervised_loss(ys_pred_t, ys, step)  # tsa
-      yu_pred_t_sharp = yu_pred_t / cfg.uda.softmax_temp  # sharpening
-      loss_cnst = uda_consistency_loss(yuh_pred_t, yu_pred_t_sharp.detach())
+      y_pred_a = netA.model(x)  # forward
+      ys_pred_a, yu_pred_a, yuh_pred_a = split_back(y_pred_a)
+      # loss computation
+      loss_sup = uda_supervised_loss(ys_pred_a, ys, step)
+      loss_cnst = uda_consistency_loss(yuh_pred_a, yu_pred_a.detach())
       loss_total = loss_sup + loss_cnst * cfg.uda.factor
 
+    # meta peudo labels
     if is_mpl:
-      yu_pred_s = m.stdn.model(xu)
+      # netA: teacher, netB: student
+      yu_pred_b = netB.model(xu)
       if not is_uda:
-        yu_pred_t = m.tchr.model(xu)
-      loss_mpl_s = mpl_stdn_loss(yu_pred_s, yu_pred_t)
-      loss_mpl_s.backward(retain_graph=True, create_graph=True)
-      m.stdn.step_all()
-      m.tchr.model.zero_grad()  # teacher should not be affected
+        yu_pred_a = netA.model(xu)
+      loss_mpl_b = mpl_stdn_loss(yu_pred_b, yu_pred_a)
+      loss_mpl_b.backward(retain_graph=True, create_graph=True)
+      netB.step_all(clip_grad=cfg.optim.clip_grad)
+      netA.model.zero_grad()  # teacher should not be affected
 
-      ys_pred_s = m.stdn.model(xs)
-      loss_mpl_t = mpl_tchr_loss(ys_pred_s, ys)
-      loss_total += loss_mpl_t
+      ys_pred_b = netB.model(xs)
+      loss_mpl_a = mpl_tchr_loss(ys_pred_b, ys)
+      loss_total += loss_mpl_a
 
     loss_total.backward()
-    m.tchr.step_all()
+    netA.step_all(clip_grad=cfg.optim.clip_grad)
+    if netB:
+      netB.model.zero_grad()
 
-    ys_pred = ys_pred_t if not is_mpl else ys_pred_s  # stnt acc when mpl.
+    ys_pred = ys_pred_a if not is_mpl else ys_pred_b
     acc_top1 = topk_accuracy(ys_pred, ys, (1,))
     out_train.add(top1=acc_top1, num=ys.size(0))
-    # acc_top1, acc_top5 = topk_accuracy(ys_pred, ys, (1, 5))
-    # out_train.add(top1=acc_top1, top5=acc_top5, num=ys.size(0))
 
     if not (m.is_valid_step or m.is_finished):
       continue
 
-    # validation
+    # valid
     out_valid = test(cfg, manager, 'valid')
     m.monitor.watch(out_valid[cfg.valid.metric])
 
+    # save & log
     with m.logging():
       m.save(cfg, tag='last')
       if m.monitor.is_best:
@@ -106,8 +117,10 @@ def train(cfg, manager):
       mark_record = ' [<--record]' if m.monitor.is_best else ''
       log.info(_to_fmt(m, out_train, out_valid, m.monitor) + mark_record)
 
+    # tensorboard
     m.writers.add_scalars('train', out_train.to_dict(), step)
     m.writers.add_scalars('valid', out_valid.to_dict(), step)
-    m.writers.add_scalars('train', {'lr': m.tchr.sched.get_lr()[0]}, step)
+    m.writers.add_scalars('train', {'lr': m.stdn.sched.get_lr()[0]}, step)
+    out_train.init()
 
   return out_train, out_valid

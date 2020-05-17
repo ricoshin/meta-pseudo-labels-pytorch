@@ -1,0 +1,20 @@
+# 006_cifar10_supervised_mpl.yaml
+model: wresnet_28_2
+dataset: cifar10
+n_labeled: 4000
+valid:
+  metric: top1 # in ['top1', 'loss']
+  interval: 200
+method:
+  base: sup
+  mpl: True
+batch_size:
+  sup: 128
+  uns: 128
+  test: 128
+stdn:
+  lr: 0.3
+  dropout: 0.35
+tchr:
+  lr: 0.125
+  dropout: 0.5

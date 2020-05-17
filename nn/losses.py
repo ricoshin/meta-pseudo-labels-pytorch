@@ -57,7 +57,7 @@ class TrainingSignalAnnealingCELoss(nn.Module):
     else:
       self.num_classes = input.size(-1)
     loss = F.cross_entropy(input, target, reduction='none')
-    target_one_hot = F.one_hot(target)
+    target_one_hot = F.one_hot(target, self.num_classes)
     input_probs = F.softmax(input, dim=-1)
     threshold = self._get_threshold(step).to(input.device)
     correct_label_probs = torch.sum(target_one_hot * input_probs, dim=-1)

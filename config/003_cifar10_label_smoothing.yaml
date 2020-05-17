@@ -1,0 +1,24 @@
+# 003_cifar_label_smoothing
+model: wresnet_28_2
+dataset: cifar10
+n_labeled: 4000
+valid:
+  metric: top1
+  interval: 500
+method:
+  base: sup
+  mpl: False
+optim:
+  name: sgd
+  nesterov: True
+  momentum: 0.9
+  lb_smooth: 0.0
+  clip_grad: 5.0
+batch_size:
+  sup: 128
+  # uns: 128
+  test: 128
+stdn:
+  lr: 0.3
+  batch: 128
+  dropout: 0.35

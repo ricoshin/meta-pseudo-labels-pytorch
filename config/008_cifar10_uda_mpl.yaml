@@ -1,42 +1,25 @@
+# 008_cifar10_uda_mpl.yaml
 model: wresnet_28_2
 dataset: cifar10
 n_labeled: 4000
 valid:
-  metric: top1 # in ['top1', 'loss']
-  interval: 10
+  metric: top1
+  interval: 200
 method:
-  base: uda  # sup, ra, uda
+  base: uda
   mpl: True
-optim:
-  name: sgd
-  nesterov: True
-  momentum: 0.9
-  lb_smooth: 0.0
-aug:
-  default: True
-  cutout: 16
-comm:
-  w_decay: 0.0005
-  bn_decay: 0.99
-  n_steps: 60
-  n_warmup: 30
 batch_size:
-  sup: 128  # 64
-  uns: 128  # 320
+  sup: 128
+  uns: 128
   test: 128
 stdn:
   lr: 0.3
-  batch: 128
   dropout: 0.35
 tchr:
   lr: 0.125
-  batch: 128  # 320 when uda
   dropout: 0.5
 uda:
   factor: 1.0
   tsa_schedule: 'linear'  # ['', ''linear', 'log', 'exp']  # for labeled loss
   confid_threshold: 0.8   # for unlabeled target dist.
   softmax_temp: 0.4       # for unlabeled predicted dist.
-randaug:
-  n: 3
-  m: 5

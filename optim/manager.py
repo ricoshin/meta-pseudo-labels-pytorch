@@ -3,6 +3,7 @@ import os
 from contextlib import contextmanager
 
 import torch
+from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
 
 import data, utils
@@ -30,7 +31,9 @@ class ModelControl:
     self.model.eval()
     return self
 
-  def step_all(self):
+  def step_all(self, clip_grad=None):
+    if clip_grad:
+      clip_grad_norm_(self.model.parameters(), clip_grad)
     self.optim.step()
     self.optim.zero_grad()
     self.sched.step()
@@ -63,20 +66,21 @@ class TrainingManager:
       'nesterov': cfg.optim.nesterov,
       'weight_decay': cfg.comm.w_decay,
     }
-    log.info('Create a teacher model control.')
-    model = get_model(dropout=cfg.tchr.dropout, **model_kwargs)
-    optim = get_optimizer(model=model, lr=cfg.tchr.lr, **optim_kwargs)
+
+    log.info('Create a student model control.')
+    model = get_model(dropout=cfg.stdn.dropout, **model_kwargs)
+    optim = get_optimizer(model=model, lr=cfg.stdn.lr, **optim_kwargs)
     sched = get_scheduler(optim, cfg.comm.n_steps, cfg.comm.n_warmup)
-    self.tchr = ModelControl(model, optim, sched)
-    self.model_ctrls['tchr'] = self.tchr
+    self.stdn = ModelControl(model, optim, sched)
+    self.model_ctrls['stdn'] = self.stdn
 
     if cfg.method.mpl:
-      log.info('Create a student model control.')
-      model = get_model(dropout=cfg.stdn.dropout, **model_kwargs)
-      optim = get_optimizer(model=model, lr=cfg.stdn.lr, **optim_kwargs)
+      log.info('Create a teacher model control.')
+      model = get_model(dropout=cfg.tchr.dropout, **model_kwargs)
+      optim = get_optimizer(model=model, lr=cfg.tchr.lr, **optim_kwargs)
       sched = get_scheduler(optim, cfg.comm.n_steps, cfg.comm.n_warmup)
-      self.stdn = ModelControl(model, optim, sched)
-      self.model_ctrls['stdn'] = self.stdn
+      self.tchr = ModelControl(model, optim, sched)
+      self.model_ctrls['tchr'] = self.tchr
 
   def __str__(self):
     return self.strf()
@@ -87,7 +91,7 @@ class TrainingManager:
       f'{Color.SELECTED}{self.cfg.tag}{Color.END}',
       f'method: {self.cfg.method.base +  mpl_postfix}',
       f'step: {self.step:7d}/{self.step_max:7d}',
-      f'lr_t: {self.tchr.sched.get_lr()[0]:5.3f}',
+      f'lr_stdn: {self.stdn.sched.get_lr()[0]:5.3f}',
       # f'lr_s: {self.stdn.sched.get_lr()[0]:5.3f}',
       ])
 

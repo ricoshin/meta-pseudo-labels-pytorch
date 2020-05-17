@@ -1,0 +1,23 @@
+# 004_cifar_10_randaugment.yaml
+model: wresnet_28_2
+dataset: cifar10
+n_labeled: 4000
+valid:
+  metric: top1
+  interval: 200
+method:
+  base: ra
+  mpl: True
+batch_size:
+  sup: 128
+  uns: 128
+  test: 128
+stdn:
+  lr: 0.3
+  dropout: 0.35
+tchr:
+  lr: 0.125
+  dropout: 0.5
+randaug:
+  n: 3
+  m: 4

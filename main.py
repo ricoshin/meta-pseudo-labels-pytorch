@@ -48,9 +48,10 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Meta Pseudo Labels.')
   parser.add_argument('--data_dir', type=str, default='data')
   parser.add_argument('--save_dir', type=str, default='out')
-  # parser.add_argument('--load_dir', type=str, default='')
-  # parser.add_argument('--config_dir', type=str, default='config')
-  parser.add_argument('--config', type=str, default='./config/cifar10.yaml')
+  parser.add_argument('--config_default', type=str,
+                      default='./config/000_default.yaml')
+  parser.add_argument('--config', type=str,
+                      default='./config/006_cifar10_supervised_mpl.yaml')
   parser.add_argument('--log_level', type=str, default='info')
   parser.add_argument('--debug', action='store_true')
   parser.add_argument('--test_only', action='store_true')

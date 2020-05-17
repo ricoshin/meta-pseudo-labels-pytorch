@@ -38,9 +38,12 @@ class Config(DotMap):
 
 
 def sanity_check(cfg):
-  assert cfg.method.base in ['sup', 'ra', 'uda']
-  assert cfg.valid.metric in ['top1', 'loss']
-  assert cfg.uda.tsa_schedule in ['', 'linear', 'log', 'exp']
+  try:
+    assert cfg.method.base in ['sup', 'ra', 'uda']
+    assert cfg.valid.metric in ['top1', 'loss']
+    assert cfg.uda.tsa_schedule in ['', 'linear', 'log', 'exp']
+  except:
+    import pdb; pdb.set_trace()
   return cfg
 
 
@@ -75,7 +78,8 @@ def init_config(parser):
         # remove previous files and go from the scratch
         assert not cfg.test_only, 'Test cannot be performed from scratch!'
         log.warning(f"'--from_scratch' mode on. "
-                    f'Press [ENTER] to remove the previous files.')
+                    f'Press {Color.GREEN2}[ENTER]{Color.END} '
+                    'to remove the previous files.')
         input()  # waiting for ENTER
         shutil.rmtree(cfg.save_dir, ignore_errors=True)
         log.warning(f'Removed previous dirs and files.')
@@ -94,6 +98,7 @@ def init_config(parser):
     logger.set_file_handler('result', cfg.log_level, cfg.save_dir, 'result')
 
   # LOAD (AND BACKUP) YAML
+  cfg_yaml = Config()
   yaml_files = glob.glob(os.path.join(cfg.save_dir, '*.yaml'))
   if len(yaml_files) == 0:
     if not cfg.config:
@@ -102,21 +107,35 @@ def init_config(parser):
     # if there's no config file in save_dir, use newly privided one.
     log.warning(f'No existing config file.')
     yaml_file = cfg.config
-    if cfg.save_dir:  # backup to use in the future
-      config_backup = os.path.join(cfg.save_dir, os.path.basename(yaml_file))
-      shutil.copyfile(cfg.config, config_backup)
-      log.info(f'Backup config file: {config_backup}')
+    # load default config first
+    if os.path.exists(cfg.config_default):
+      with open(cfg.config_default) as f:
+        cfg_yaml += Config(yaml.safe_load(f))
+      log.info(f'Loaded default config file: {cfg.config_default}')
+    else:
+      log.warning('Default config file could not be found: '
+                  f'{cfg.config_default}')
+    backup = True
   elif len(yaml_files) == 1:
-    # if there exist yaml file already in save_dir, take that one.
+    # if there already exists an yaml file in save_dir, take that one.
     yaml_file = yaml_files[0]
-    log.info(f'Found an existing config file.')
+    log.warning(f'Found an existing config file.')
     if cfg.config:
-      log.info(f'Given file with --config option will be ignored.')
+      log.warning(f'Given file with --config option will be ignored.')
+    backup = False
   else:
     raise Exception(f'More than one yaml file in {cfg.save_dir}.')
   # load .yaml and incorporate into the config
   with open(yaml_file) as f:
-    cfg += Config(yaml.safe_load(f))
-  log.info(f'Config file loaded: {yaml_file}')
+    cfg_yaml += Config(yaml.safe_load(f))
+  log.info(f'Loaded config file: {yaml_file}')
+  # backup to use in the future
+  if cfg.save_dir and backup:
+    config_backup = os.path.join(cfg.save_dir, os.path.basename(yaml_file))
+    with open(config_backup, 'w') as f:
+      yaml.dump(cfg_yaml.toDict(), f)
+    # shutil.copyfile(cfg.config, config_backup)
+    log.info(f'Backed up config file: {config_backup}')
 
+  cfg += cfg_yaml
   return sanity_check(cfg)

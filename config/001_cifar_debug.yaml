@@ -1,0 +1,30 @@
+# 001_cifar_debug.yaml
+model: wresnet_28_2
+dataset: cifar10
+n_labeled: 4000
+valid:
+  metric: top1
+  interval: 10
+method:
+  base: uda  # sup, ra, uda
+  mpl: True
+comm:
+  n_steps: 60
+batch_size:
+  sup: 128
+  uns: 128
+  test: 128
+stdn:
+  lr: 0.3
+  dropout: 0.35
+tchr:
+  lr: 0.125
+  dropout: 0.5
+uda:
+  factor: 1.0
+  tsa_schedule: 'linear'  # ['', ''linear', 'log', 'exp']  # for labeled loss
+  confid_threshold: 0.8   # for unlabeled target dist.
+  softmax_temp: 0.4       # for unlabeled predicted dist.
+randaug:
+  n: 3
+  m: 4

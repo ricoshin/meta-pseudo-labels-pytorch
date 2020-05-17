@@ -5,11 +5,10 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 class TFWriters:
-  _sub_dir = 'tfrecord'
   def __init__(self, log_dir, name_list, deactivated=False):
     assert isinstance(name_list, (list, tuple))
     assert all([isinstance(n, str) for n in name_list])
-    self.log_dir = path.join(log_dir, TFWriters._sub_dir)
+    self.log_dir = log_dir
     self.writers = {}
     for name in name_list:
       self.writers[name] = DeactivatableSummaryWriter(

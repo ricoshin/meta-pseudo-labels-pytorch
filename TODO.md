@@ -19,16 +19,15 @@
 - [x] colorize warning msgs
 - [x] 현재 어떤 태그로 훈련 중인지 콘솔에 지속적으로 출력
 - [x] MPL: student학습시는 teacher gradient 일시적 차단(그래프는 유지)
-
 - [x] UDA_labeled: TSA(loss)
 - [x] UDA_unlabeled: confidence_threshold(target) / softmax_temp(target)
 
-- [ ] gradient clipping
-- [ ] cfg.uda.on 제거
-- [ ] .yaml 내용 정리
-- [ ] supervised, label smoothing, randaugment: use student hyper params
+- [x] gradient clipping
+- [x] cfg.uda.on 제거
+- [x] .yaml 내용 정리
+- [x] supervised, label smoothing, randaugment: use student hyper params
+- [x] TFrecord 경로 수정 (지금 수정하면 이어서 학습 불가 - 연기)
 
-- [ ] TFrecord 경로 수정 (지금 수정하면 이어서 학습 불가 - 연기)
 - [ ] default = simple + cutout
 - [ ] 실행 자동화 코드 구현
 - [ ] 하이퍼 파라미터 튜닝 코드 구현 ( ray? cfg 외부변경 가능하도록 )
@@ -41,3 +40,6 @@
 - [x] RandAugment
 - [x] UDA
 - [x] MPL
+---
+/opt/conda/lib/python3.7/site-packages/torch/optim/lr_scheduler.py:114: UserWarning: Seems like `optimizer.step()` has been overridden after learning rate scheduler initialization. Please, make sure to call `optimizer.step()` before `lr_scheduler.step()`. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  "https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate", UserWarning)
