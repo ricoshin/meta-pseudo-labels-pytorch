@@ -40,6 +40,7 @@ class Config(DotMap):
 def sanity_check(cfg):
   assert cfg.method.base in ['sup', 'ra', 'uda']
   assert cfg.valid.metric in ['top1', 'loss']
+  assert cfg.uda.tsa_schedule in ['', 'linear', 'log', 'exp']
   return cfg
 
 

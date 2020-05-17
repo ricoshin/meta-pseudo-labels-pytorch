@@ -5,8 +5,8 @@ from torch import nn
 from torch.nn.functional import kl_div, softmax, log_softmax
 
 import optim
-from nn.losses import (SmoothableHardLabelCELoss, SoftLabelCELoss,
-                       KLDivergenceLoss)
+from nn.losses import (LabelSmoothableCELoss, TrainingSignalAnnealingCELoss,
+                       ConsistencyKLDLoss, SoftLabelCEWithLogitsLoss)
 from optim.metric import topk_accuracy, AverageMeter
 from optim.test import test
 from utils import concat
@@ -32,10 +32,14 @@ def train(cfg, manager):
   is_mpl = cfg.method.mpl
 
   out_train = AverageMeter('train')
-  supervised_loss = SmoothableHardLabelCELoss(factor=cfg.optim.lb_smooth)
-  hard_xent_loss = SmoothableHardLabelCELoss(factor=0.)
-  consistency_loss = KLDivergenceLoss() if is_uda else None
-  soft_xent_loss = SoftLabelCELoss() if is_mpl else None
+  smooth_supervised_loss = LabelSmoothableCELoss(factor=cfg.optim.lb_smooth)
+  uda_supervised_loss = TrainingSignalAnnealingCELoss(cfg) if is_uda else None
+  uda_consistency_loss = ConsistencyKLDLoss(
+    confid_threshold=cfg.uda.confid_threshold,
+    softmax_temp=cfg.uda.softmax_temp,
+    ) if is_uda else None
+  mpl_stdn_loss = SoftLabelCEWithLogitsLoss() if is_mpl else None
+  mpl_tchr_loss = LabelSmoothableCELoss(factor=0.) if is_mpl else None
 
   if m.is_finished:
     log.info('No remaining steps.')
@@ -56,26 +60,27 @@ def train(cfg, manager):
 
     if not is_uda:
       ys_pred_t = m.tchr.model(xs)  # forward
-      loss_total = loss_sup = supervised_loss(ys_pred_t, ys)
+      loss_total = loss_sup = smooth_supervised_loss(ys_pred_t, ys)
     else:
       x, split_back = concat([xs, xu, xuh], retriever=True)
       y_pred = m.tchr.model(x)  # forward
       ys_pred_t, yu_pred_t, yuh_pred_t = split_back(y_pred)
-      loss_sup = supervised_loss(ys_pred_t, ys)
-      loss_cnst = consistency_loss(yuh_pred_t, yu_pred_t.detach())
+      loss_sup = uda_supervised_loss(ys_pred_t, ys, step)  # tsa
+      yu_pred_t_sharp = yu_pred_t / cfg.uda.softmax_temp  # sharpening
+      loss_cnst = uda_consistency_loss(yuh_pred_t, yu_pred_t_sharp.detach())
       loss_total = loss_sup + loss_cnst * cfg.uda.factor
 
     if is_mpl:
       yu_pred_s = m.stdn.model(xu)
       if not is_uda:
         yu_pred_t = m.tchr.model(xu)
-      loss_mpl_s = soft_xent_loss(yu_pred_s, yu_pred_t)
+      loss_mpl_s = mpl_stdn_loss(yu_pred_s, yu_pred_t)
       loss_mpl_s.backward(retain_graph=True, create_graph=True)
       m.stdn.step_all()
       m.tchr.model.zero_grad()  # teacher should not be affected
 
       ys_pred_s = m.stdn.model(xs)
-      loss_mpl_t = hard_xent_loss(ys_pred_s, ys)
+      loss_mpl_t = mpl_tchr_loss(ys_pred_s, ys)
       loss_total += loss_mpl_t
 
     loss_total.backward()

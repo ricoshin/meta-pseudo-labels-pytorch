@@ -33,9 +33,10 @@ tchr:
   batch: 128  # 320 when uda
   dropout: 0.5
 uda:
-  on: True
   factor: 1.0
-  temp: 0.8
+  tsa_schedule: 'linear'  # ['', ''linear', 'log', 'exp']  # for labeled loss
+  confid_threshold: 0.8   # for unlabeled target dist.
+  softmax_temp: 0.4       # for unlabeled predicted dist.
 randaug:
   n: 3
   m: 5

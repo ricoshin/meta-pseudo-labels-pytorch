@@ -20,24 +20,20 @@ aug:
 comm:
   w_decay: 0.0005
   bn_decay: 0.99
-  n_steps: 1000000
+  n_steps: 1000000  # 500k in the official code
   n_warmup: 2000
 batch_size:
-  sup: 128  # 64
-  uns: 128  # 320
-  test: 128
+  sup: 64   # 64
+  uns: 448  # 64 * 7 (updated in the official code on 3 Feb)
+  test: 10000
 stdn:
-  lr: 0.3
-  batch: 128
-  dropout: 0.35
-tchr:
-  lr: 0.125
-  batch: 128  # 320 when uda
-  dropout: 0.5
+  lr: 0.03
+  dropout: 0.0  # no dropout
 uda:
-  on: True
   factor: 1.0
-  temp: 0.8
+  tsa_schedule: 'linear'  # ['', ''linear', 'log', 'exp']  # for labeled loss
+  confid_threshold: 0.8   # for unlabeled target dist.
+  softmax_temp: 0.4       # for unlabeled predicted dist.
 randaug:
   n: 3
-  m: 5
+  m: 4

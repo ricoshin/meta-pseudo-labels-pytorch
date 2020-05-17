@@ -40,4 +40,4 @@ uda:
   temp: 0.8
 randaug:
   n: 3
-  m: 5
+  m: 4
