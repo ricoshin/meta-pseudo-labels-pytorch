@@ -89,6 +89,8 @@ def train(cfg, manager):
       netB.step_all(clip_grad=cfg.optim.clip_grad)
       netA.model.zero_grad()  # teacher should not be affected
 
+      xs, ys = next(m.loaders.sup)
+      xs, ys = xs.cuda(), ys.cuda()  # to see different xs
       ys_pred_b = netB.model(xs)
       loss_mpl_a = mpl_tchr_loss(ys_pred_b, ys)
       loss_total += loss_mpl_a

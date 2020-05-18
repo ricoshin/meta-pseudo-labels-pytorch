@@ -8,6 +8,8 @@ valid:
 method:
   base: uda  # sup, ra, uda
   mpl: True
+optim:
+  lb_smooth: 0.1
 comm:
   n_steps: 60
 batch_size:

@@ -1,3 +1,4 @@
+import collections
 import glob
 import logging
 import os
@@ -15,27 +16,53 @@ from utils.color import Color
 log = logging.getLogger('main')
 
 
+def update_dict(d, u):
+  """recursive dict update."""
+  for k, v in u.items():
+    if isinstance(v, collections.abc.Mapping):
+      d[k] = update_dict(d.get(k, {}), v)
+    else:
+      d[k] = v
+  return d
+
+
 class Config(DotMap):
   """A singleton class for managing global configuration."""
   _instance = None
 
   def __add__(self, other):
-    self_ = self.toDict()
-    self_.update(other.toDict())
-    return Config(self_)
+    self_dict = self.toDict()
+    update_dict(self_dict, other.toDict())
+    return Config(self_dict)
 
   def __str__(self):
     _dict = {k: v for k, v in self.toDict().items() if v}
     head = 'Config(Empty members are ommitted.)\n'
     return head + pprint.pformat(_dict, indent=2, width=80)
 
+  def update_by_dotkey(self, dict, delimiter='.'):
+    for k, v in dict.items():
+      self.set_by_dotkey(k, v, delimiter)
+
+  def set_by_dotkey(self, key, value, delimiter='.'):
+    obj = self
+    keys = key.split(delimiter)
+    for k in keys[:-1]:
+      obj = obj.get(k)
+    obj[keys[-1]] = value
+
+  def get_by_dotkey(self, key, delimiter='.'):
+    obj = self
+    for k in key.split(delimiter):
+      obj = obj.get(k)
+    return obj
+
   @staticmethod
-  def get():
+  def get_instance():
     if Config._instance:
       return Config._instance
     else:
       return Config()
-
 
 def sanity_check(cfg):
   try:
@@ -47,15 +74,13 @@ def sanity_check(cfg):
   return cfg
 
 
-def init_config(parser):
+def init_config(args):
   """Function for initializing coniguration."""
-  assert isinstance(parser, ArgumentParser)
+  assert isinstance(args, collections.abc.Mapping)
 
-  # GET CONFIG
-  cfg = Config.get()
-
-  # PARSE_ARGS
-  cfg += Config(vars(parser.parse_args()))
+  # GET CONFIG & UPDATE ARGS
+  cfg = Config.get_instance()
+  cfg += Config(args)
 
   # LOG LEVEL
   if cfg.debug:
@@ -113,8 +138,8 @@ def init_config(parser):
         cfg_yaml += Config(yaml.safe_load(f))
       log.info(f'Loaded default config file: {cfg.config_default}')
     else:
-      log.warning('Default config file could not be found: '
-                  f'{cfg.config_default}')
+      raise Exception('Default config file could not be found: '
+                      f'{cfg.config_default}')
     backup = True
   elif len(yaml_files) == 1:
     # if there already exists an yaml file in save_dir, take that one.

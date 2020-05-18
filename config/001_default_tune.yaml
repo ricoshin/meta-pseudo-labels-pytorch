@@ -1,7 +1,7 @@
 # 000_default.yaml
 model: wresnet_28_2
 dataset: cifar10
-n_labeled: 4000
+n_labeled: 400
 valid:
   metric: top1 # in ['top1', 'loss']
   interval: 100
@@ -22,7 +22,7 @@ aug:
 comm:
   w_decay: 0.0005
   bn_decay: 0.99
-  n_steps: 1000000  # 500k in the official code
+  n_steps: 100000  # 500k in the official code
   n_warmup: 2000
 batch_size:
   sup: 128   # 64

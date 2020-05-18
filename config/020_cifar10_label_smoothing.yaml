@@ -12,7 +12,7 @@ optim:
   name: sgd
   nesterov: True
   momentum: 0.9
-  lb_smooth: 0.0
+  lb_smooth: 0.1
   clip_grad: 5.0
 batch_size:
   sup: 128
@@ -20,5 +20,4 @@ batch_size:
   test: 128
 stdn:
   lr: 0.3
-  batch: 128
   dropout: 0.35

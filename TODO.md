@@ -21,16 +21,16 @@
 - [x] MPL: student학습시는 teacher gradient 일시적 차단(그래프는 유지)
 - [x] UDA_labeled: TSA(loss)
 - [x] UDA_unlabeled: confidence_threshold(target) / softmax_temp(target)
-
 - [x] gradient clipping
 - [x] cfg.uda.on 제거
-- [x] .yaml 내용 정리
+- [x] .yaml 내용 정리, default config
 - [x] supervised, label smoothing, randaugment: use student hyper params
 - [x] TFrecord 경로 수정 (지금 수정하면 이어서 학습 불가 - 연기)
 
+- [ ] 하이퍼 파라미터 튜닝 코드 구현 ( ray? cfg 외부변경 가능하도록 )
+- [ ] 논문 내용 다시 점검
 - [ ] default = simple + cutout
 - [ ] 실행 자동화 코드 구현
-- [ ] 하이퍼 파라미터 튜닝 코드 구현 ( ray? cfg 외부변경 가능하도록 )
 - [ ] test standard deviation
 
 ---

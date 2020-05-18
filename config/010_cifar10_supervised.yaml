@@ -14,5 +14,4 @@ batch_size:
   test: 128
 stdn:
   lr: 0.3
-  batch: 128
   dropout: 0.35

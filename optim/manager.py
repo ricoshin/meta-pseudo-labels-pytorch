@@ -86,9 +86,10 @@ class TrainingManager:
     return self.strf()
 
   def strf(self, delimiter=' | '):
+    tag = self.cfg.tag if self.cfg.tag else 'no_tag'
     mpl_postfix = '_mpl' if self.cfg.method.mpl else ''
     return delimiter.join([
-      f'{Color.SELECTED}{self.cfg.tag}{Color.END}',
+      f'{Color.SELECTED}{tag}{Color.END}',
       f'method: {self.cfg.method.base +  mpl_postfix}',
       f'step: {self.step:7d}/{self.step_max:7d}',
       f'lr_stdn: {self.stdn.sched.get_lr()[0]:5.3f}',

@@ -41,7 +41,7 @@ def main(cfg):
   # import pdb; pdb.set_trace()
   log_result.critical(result_test)
 
-  return True
+  return result_test
 
 
 if __name__ == '__main__':
@@ -59,9 +59,11 @@ if __name__ == '__main__':
   parser.add_argument('--tag', type=str, default='')
 
   # config
-  cfg = init_config(parser)
+  args = vars(parser.parse_args())
+  cfg = init_config(args)
   log.newline()
   log.info(cfg)
+
 
   if cfg.debug:
     log.warning('Debugging mode!')

@@ -10,7 +10,6 @@ from data.dataloaders import InfiniteDataLoader, DataLoaderTriplet
 from utils.config import Config
 
 log = getLogger('main')
-cfg = Config.get()
 
 
 def get_dataloader(cfg):
