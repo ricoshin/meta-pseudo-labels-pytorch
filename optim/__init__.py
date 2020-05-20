@@ -36,14 +36,10 @@ def get_model(model, dataset, bn_momentum, dropout, data_parallel):
   num_classes = get_num_classes(dataset)
   model = WideResNet(
     depth, widen_factor, bn_momentum, dropout, num_classes)
-
   if data_parallel:
-      model = model.cuda()
       model = DataParallel(model)
-  else:
-      import horovod.torch as hvd
-      device = torch.device('cuda', hvd.local_rank())
-      model = model.to(device)
+  assert torch.cuda.is_available()
+  model = model.cuda()
   cudnn.benchmark = True
   return model
 

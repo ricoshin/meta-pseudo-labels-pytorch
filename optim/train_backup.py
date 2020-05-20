@@ -1,12 +1,13 @@
 import logging
 
+from ray import tune
 import torch
 from torch import nn
 from torch.nn.functional import kl_div, softmax, log_softmax
 
-import optim
 from nn.losses import (LabelSmoothableCELoss, TrainingSignalAnnealingCELoss,
                        ConsistencyKLDLoss, SoftLabelCEWithLogitsLoss)
+import optim
 from optim.metric import topk_accuracy, AverageMeter
 from optim.test import test
 from utils import concat
@@ -21,12 +22,13 @@ def _to_fmt(*args, delimiter=' | '):
   return delimiter.join(map(str, args))
 
 
-def train(cfg, manager):
+def train(cfg, manager, tuning=False):
   assert isinstance(manager, optim.manager.TrainingManager)
   # for brevity
   m = manager
   is_uda = cfg.method.base == 'uda'
   is_mpl = cfg.method.mpl
+  metric = cfg.valid.metric
   # load model if possible
   m.load_if_available(cfg, tag='last', verbose=True)
   if m.is_finished:
@@ -50,7 +52,7 @@ def train(cfg, manager):
   # average tracker
   out_train = AverageMeter('train')
 
-  for step in m.step_generator(mode='train'):
+  for step in m.step_generator(mode='train', disable_pbar=tuning):
     m.train()
     # out_train.init()  # uncomment this if you want to see only the last metric
 
@@ -108,8 +110,10 @@ def train(cfg, manager):
       continue
 
     # valid
-    out_valid = test(cfg, manager, 'valid')
-    m.monitor.watch(out_valid[cfg.valid.metric])
+    out_valid = test(cfg, manager, 'valid', tuning)
+    m.monitor.watch(out_valid[metric])
+    if tuning:
+      tune.report({metric: out_valid[metric]})
 
     # save & log
     with m.logging():

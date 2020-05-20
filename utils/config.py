@@ -31,6 +31,7 @@ class Config(DotMap):
   _instance = None
 
   def __add__(self, other):
+    assert isinstance(other, Config)
     self_dict = self.toDict()
     update_dict(self_dict, other.toDict())
     return Config(self_dict)
@@ -40,22 +41,27 @@ class Config(DotMap):
     head = 'Config(Empty members are ommitted.)\n'
     return head + pprint.pformat(_dict, indent=2, width=80)
 
-  def update_by_dotkey(self, dict, delimiter='.'):
+  def update_dotmap(self, dict, delimiter='.'):
     for k, v in dict.items():
-      self.set_by_dotkey(k, v, delimiter)
+      self.set_dotmap(k, v, delimiter)
 
-  def set_by_dotkey(self, key, value, delimiter='.'):
+  def set_dotmap(self, key, value, delimiter='.'):
     obj = self
     keys = key.split(delimiter)
     for k in keys[:-1]:
       obj = obj.get(k)
     obj[keys[-1]] = value
 
-  def get_by_dotkey(self, key, delimiter='.'):
+  def get_dotmap(self, key, delimiter='.'):
     obj = self
     for k in key.split(delimiter):
       obj = obj.get(k)
     return obj
+
+  def detach(self, key):
+    detached = self[key]
+    del self[key]
+    return detached
 
   @staticmethod
   def get_instance():
@@ -64,13 +70,18 @@ class Config(DotMap):
     else:
       return Config()
 
+
+def post_process(cfg):
+  if cfg.method.base == 'uda':
+    cfg.method.is_uda = True
+  return cfg
+
+
 def sanity_check(cfg):
-  try:
-    assert cfg.method.base in ['sup', 'ra', 'uda']
-    assert cfg.valid.metric in ['top1', 'loss']
-    assert cfg.uda.tsa_schedule in ['', 'linear', 'log', 'exp']
-  except:
-    import pdb; pdb.set_trace()
+  assert cfg.comm.n_steps >= cfg.batch_size.sup
+  assert cfg.method.base in ['sup', 'ra', 'uda']
+  assert cfg.valid.metric in ['top1', 'loss']
+  assert cfg.uda.tsa_schedule in ['', 'linear', 'log', 'exp']
   return cfg
 
 
@@ -124,7 +135,10 @@ def init_config(args):
 
   # LOAD (AND BACKUP) YAML
   cfg_yaml = Config()
-  yaml_files = glob.glob(os.path.join(cfg.save_dir, '*.yaml'))
+  if cfg.save_dir:
+    yaml_files = glob.glob(os.path.join(cfg.save_dir, '*.yaml'))
+  else:
+    yaml_files = []
   if len(yaml_files) == 0:
     if not cfg.config:
       raise Exception('No config file provided. Specify dir having '
@@ -163,4 +177,4 @@ def init_config(args):
     log.info(f'Backed up config file: {config_backup}')
 
   cfg += cfg_yaml
-  return sanity_check(cfg)
+  return post_process(cfg)

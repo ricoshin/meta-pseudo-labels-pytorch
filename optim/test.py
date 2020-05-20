@@ -9,7 +9,7 @@ from utils.debugger import getSignalCatcher
 sigquit = getSignalCatcher('SIGQUIT')
 
 
-def test(cfg, manager, mode='test'):
+def test(cfg, manager, mode='test', tuning=False):
   assert isinstance(manager, optim.manager.TrainingManager)
   assert mode in ['valid', 'test']
 
@@ -19,7 +19,7 @@ def test(cfg, manager, mode='test'):
 
   m.eval()
   result = AverageMeter(mode)
-  for x, y in m.step_generator(mode):
+  for x, y in m.step_generator(mode, disable_pbar=tuning):
     x, y = x.cuda(), y.cuda()
     # if sigquit.is_active():
     #   import pdb; pdb.set_trace()

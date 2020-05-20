@@ -15,3 +15,13 @@ batch_size:
 stdn:
   lr: 0.3
   dropout: 0.35
+tune:
+  stdn.lr:
+    sampler: loguniform
+    values: [0.0001, 1.0]
+  stdn.dropout:
+    sampler: uniform
+    values: [0, 1]
+  batch_size.sup:
+    sampler: uniform
+    values: [32, 512]

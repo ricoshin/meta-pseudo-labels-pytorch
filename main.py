@@ -1,76 +1,67 @@
 import argparse
-from logging import getLogger
+import logging
 
-from data import get_dataloader
-from optim.manager import TrainingManager
-from optim.test import test
-from optim.train import train
-from utils.tfwriter import TFWriters
-from utils.config import Config, init_config
+from optim.environment import TrainingEnvironment
+from utils.config import Config, init_config, sanity_check
 from utils.watch import Watch
 
-log = getLogger('main')
-log_result = getLogger('result')
 
+log = logging.getLogger('main')
+log_result = logging.getLogger('result')
 
-def main(cfg):
-  log.newline()
-  log.info('[Preparation]')
-  loaders = get_dataloader(cfg)
-  writers = TFWriters(
-    log_dir=cfg.save_dir,
-    name_list=['train', 'valid'],
-    deactivated=not cfg.save_dir,
-    )
-  manager = TrainingManager(cfg, loaders, writers)
-
-  if not cfg.test_only:
-    log.newline()
-    log.info('[Training session]')
-    result_train, result_valid = train(cfg, manager)
-    if result_train:
-      assert result_valid
-      log_result.critical(f'Final: {result_train}')
-      log_result.critical(f'Final: {result_valid}')
-      log_result.critical(manager.monitor)
-
-  # For now, valid set == test set
-  log.newline()
-  log.info('[Test session]')
-  result_test = test(cfg, manager)
-  # import pdb; pdb.set_trace()
-  log_result.critical(result_test)
-
-  return result_test
+parser = argparse.ArgumentParser(description='Meta Pseudo Labels.')
+parser.add_argument('--data_dir', type=str, default='data')
+parser.add_argument('--save_dir', type=str, default='out')
+parser.add_argument('--config_default', type=str,
+                    default='./config/000_default.yaml')
+parser.add_argument('--config', type=str,
+                    default='./config/006_cifar10_supervised_mpl.yaml')
+parser.add_argument('--log_level', type=str, default='info')
+parser.add_argument('--debug', action='store_true')
+parser.add_argument('--train_only', action='store_true')
+parser.add_argument('--test_only', action='store_true')
+parser.add_argument('--from_scratch', action='store_true')
+parser.add_argument('--loader_workers', type=int, default=4)
+parser.add_argument('--tag', type=str, default='')
 
 
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser(description='Meta Pseudo Labels.')
-  parser.add_argument('--data_dir', type=str, default='data')
-  parser.add_argument('--save_dir', type=str, default='out')
-  parser.add_argument('--config_default', type=str,
-                      default='./config/000_default.yaml')
-  parser.add_argument('--config', type=str,
-                      default='./config/006_cifar10_supervised_mpl.yaml')
-  parser.add_argument('--log_level', type=str, default='info')
-  parser.add_argument('--debug', action='store_true')
-  parser.add_argument('--test_only', action='store_true')
-  parser.add_argument('--from_scratch', action='store_true')
-  parser.add_argument('--tag', type=str, default='')
-
   # config
-  args = vars(parser.parse_args())
-  cfg = init_config(args)
+  args = parser.parse_args()
+  assert not (args.train_only == True and args.test_only == True)
+  cfg = init_config(vars(args))
+  sanity_check(cfg)
+  if 'tune' in cfg:
+    del cfg['tune']  # useless for now
+
   log.newline()
   log.info(cfg)
-
 
   if cfg.debug:
     log.warning('Debugging mode!')
 
   # main
   with Watch('main', log) as t:
-    main(cfg)
+    log.newline()
+    log.info('[Preparation]')
+    env = TrainingEnvironment(cfg)
+
+    if not cfg.test_only:
+      log.newline()
+      log.info('[Training session]')
+      avgmeter_train, avgmeter_valid, monitor = env.train(cfg)
+      if avgmeter_train:
+        assert avgmeter_valid and monitor
+        log_result.critical(f'Final: {avgmeter_train}')
+        log_result.critical(f'Final: {avgmeter_valid}')
+        log_result.critical(monitor)
+
+    if not cfg.train_only:
+      # For now, valid set == test set
+      log.newline()
+      log.info('[Test session]')
+      avgmeter_test = env.test(cfg)
+      log_result.critical(avgmeter_test)
 
   log.newline()
   log.info('[End_of_program]')

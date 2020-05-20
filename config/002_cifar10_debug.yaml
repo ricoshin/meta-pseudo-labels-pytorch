@@ -13,7 +13,7 @@ optim:
 comm:
   n_steps: 60
 batch_size:
-  sup: 128
+  sup: 512
   uns: 128
   test: 128
 stdn:
@@ -30,3 +30,13 @@ uda:
 randaug:
   n: 3
   m: 4
+tune:
+  stdn.lr:
+    sampler: loguniform
+    values: [0.0001, 1.0]
+  stdn.dropout:
+    sampler: uniform
+    values: [0, 1]
+  batch_size.sup:
+    sampler: choice
+    values: [32, 64, 128, 256, 512]

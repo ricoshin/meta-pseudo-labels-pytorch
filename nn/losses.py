@@ -3,6 +3,18 @@ import torch.nn.functional as F
 from torch import nn
 
 
+class TrainingLosses(nn.Module):
+  def __init__(self, cfg):
+    super(TrainingLosses, self).__init__()
+    self.smooth_supervised = LabelSmoothableCELoss(factor=cfg.optim.lb_smooth)
+    self.uda_supervised = TrainingSignalAnnealingCELoss(cfg)
+    self.uda_consistency = ConsistencyKLDLoss(
+      confid_threshold=cfg.uda.confid_threshold, softmax_temp=cfg.uda.softmax_temp,
+    )
+    self.mpl_student = SoftLabelCEWithLogitsLoss()
+    self.mpl_teacher = LabelSmoothableCELoss(factor=0.)
+
+
 class LabelSmoothableCELoss(nn.Module):
   """Cross entropy loss that cna deliver label smoothing effect, if wanted.
    As with torch.nn.CrossEntropyLoss, it takes integer labels as a target."""
@@ -97,8 +109,10 @@ class ConsistencyKLDLoss(nn.Module):
     target_max = target.max(dim=-1).values
     loss_mask = target_max > self.confid_threshold  # train confident ones only
     loss = loss * loss_mask.detach()
-    loss = loss.mean()  # they didn't do loss.sum() / loss_mask.sum(),
-    return loss         # perhaps because all-zero masks occur quite often.
+    # they didn't do loss.sum() / loss_mask.sum(),
+    # perhaps because all-zero masks occur quite often.
+    loss = loss.mean()
+    return loss
 
 
 class SoftLabelCEWithLogitsLoss(nn.Module):

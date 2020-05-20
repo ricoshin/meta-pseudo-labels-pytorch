@@ -6,7 +6,6 @@ import torch
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
 
-import data, utils
 from utils.color import Color
 from optim import get_model, get_optimizer, get_scheduler
 from optim.metric import MetricMonitor
@@ -40,18 +39,14 @@ class ModelControl:
 
 
 class TrainingManager:
-  def __init__(self, cfg, loaders, writers, data_parallel=True):
-    assert isinstance(loaders, data.dataloaders.DataLoaderTriplet)
-    assert isinstance(writers, utils.tfwriter.TFWriters)
+  def __init__(self, cfg, data_parallel=False):
     self.cfg = cfg
-    self.loaders = loaders
-    self.writers = writers
     self.monitor = MetricMonitor.by_metric(
       metric=cfg.valid.metric, prefix='valid')
 
     self.step = 0
     self.step_max = cfg.comm.n_steps
-    self.pbar = None
+    self.pbar_train = self.pbar_test = None
 
     self.model_ctrls = {}
     model_kwargs = {
@@ -122,37 +117,46 @@ class TrainingManager:
     for ctrl in self.model_ctrls.values():
       ctrl.cuda_()
 
-  def step_generator(self, mode):
-    assert mode in ['train', 'valid', 'test']
-    # desc = mode + cfg.save_dir
-    if mode == 'train':
-      self.pbar_train = tqdm(initial=self.step, total=self.step_max,
-        desc=f'[{mode}]', leave=False)
-      for _ in range(self.step_max - self.step):
-        self.step += 1
-        self.pbar_train.update(1)
-        yield self.step
-      self.pbar_train.close()
-    elif mode in ['valid', 'test']:
-      self.pbar_test = tqdm(self.loaders.test, desc=mode, leave=False)
-      for x, y in self.pbar_test:
-        yield x, y
-      self.pbar_test.close()
+  def train_step_generator(self, disable_pbar=False, local_max_step=None):
+    self.pbar_train = tqdm(
+      initial=self.step, total=self.step_max, desc=f'[train]',
+      leave=False, disable=disable_pbar)
+    local_step = 0
+    for _ in range(self.step_max - self.step):
+      local_step += 1
+      self.step += 1
+      self.pbar_train.update(1)
+      yield self.step
+      if local_step == local_max_step:
+        break
+    self.pbar_train.close()
+
+  def test_step_generator(self, test_loader, mode, disable_pbar=False):
+    self.pbar_test = tqdm(
+      iterable=test_loader, desc=f'[{mode}]',
+      leave=False, disable=disable_pbar)
+    for x, y in self.pbar_test:
+      yield x, y
+    self.pbar_test.close()
 
   @contextmanager
   def logging(self):
     """to avoid collision with afterimage of the progress bar."""
-    self.pbar_train.clear()
+    if self.pbar_train:
+      self.pbar_train.clear()
     yield
-    self.pbar_train.refresh()
+    if self.pbar_train:
+      self.pbar_train.refresh()
 
-  def save(self, cfg, tag, verbose=False):#, status=None):
-    if not cfg.save_dir:
+  def save(self, tag, verbose=False, save_dir=None):#, status=None):
+    if not self.cfg.save_dir and not save_dir:
       return
+    if not save_dir:
+      save_dir = self.cfg.save_dir
     logs = []
     for name, ctrl in self.model_ctrls.items():
       filename = name + (f'_{tag}' if tag else '') + '.pt'
-      filepath = os.path.join(cfg.save_dir, filename)
+      filepath = os.path.join(save_dir, filename)
       torch.save({
         'step': self.step,
         'record': self.monitor.best_value,
@@ -165,13 +169,15 @@ class TrainingManager:
       log_level = 'info' if verbose else 'debug'
       getattr(log, log_level)(f'Saved snapshot to: {", ".join(logs)}')
 
-  def load_if_available(self, cfg, tag, verbose=False):
-    if not cfg.save_dir:
+  def load_if_available(self, tag, verbose=False, save_dir=None):
+    if not self.cfg.save_dir and not save_dir:
       return
+    if not save_dir:
+      save_dir = self.cfg.save_dir
     logs = []
     for name, ctrl in self.model_ctrls.items():
       filename = name + (f'_{tag}' if tag else '') + '.pt'
-      filepath = os.path.join(cfg.save_dir, filename)
+      filepath = os.path.join(save_dir, filename)
       if os.path.exists(filepath):
         loaded = torch.load(filepath)
         self.step = loaded['step']

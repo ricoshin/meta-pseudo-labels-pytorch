@@ -27,12 +27,15 @@
 - [x] supervised, label smoothing, randaugment: use student hyper params
 - [x] TFrecord 경로 수정 (지금 수정하면 이어서 학습 불가 - 연기)
 
-- [ ] 하이퍼 파라미터 튜닝 코드 구현 ( ray? cfg 외부변경 가능하도록 )
 - [ ] 논문 내용 다시 점검
+- [ ] 하이퍼 파라미터 튜닝 코드 구현 ( ray? cfg 외부변경 가능하도록 )
+- [ ] hyper opt / mlflow
+- [ ] 더 빠르게 학습 가능한지 확인(uda 미리 저장)
+- [ ] mpl 제대로 학습이 되는지 확인
+
 - [ ] default = simple + cutout
 - [ ] 실행 자동화 코드 구현
 - [ ] test standard deviation
-
 ---
 
 - [x] Supervised
@@ -41,5 +44,6 @@
 - [x] UDA
 - [x] MPL
 ---
+- [ ] bug: lr scheduler를 state_dict로 save/load하면 아래 경고 발생
 /opt/conda/lib/python3.7/site-packages/torch/optim/lr_scheduler.py:114: UserWarning: Seems like `optimizer.step()` has been overridden after learning rate scheduler initialization. Please, make sure to call `optimizer.step()` before `lr_scheduler.step()`. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
   "https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate", UserWarning)
