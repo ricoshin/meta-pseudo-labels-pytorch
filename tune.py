@@ -57,8 +57,8 @@ if __name__ == '__main__':
   cfg.update_dotmap({
     'loader_workers': cfg.cpu_per_trial,
     'n_labeled': 4000,
-    # 'comm.n_steps': 500,
-    'comm.n_steps': 100000,
+    'comm.n_steps': 500,
+    # 'comm.n_steps': 100000,
     'valid.interval': 100,
   })
   sanity_check(cfg)
@@ -139,8 +139,5 @@ if __name__ == '__main__':
     )
   # analysis
   best_dict = analysis.get_best_config(metric=cfg.valid.metric)
-  if 'datasets' in best_dict:
-    del best_dict['datasets']
-  log_result.critical(best_dict['cfg'])
-  del best_dict['cfg']
+  log_result.critical(cfg)
   log_result.critical(best_dict)
