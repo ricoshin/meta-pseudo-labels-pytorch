@@ -106,8 +106,9 @@ def init_config(args):
     log.warning(f"Nothing will be saved unless '--tag' is given.")
     cfg.save_dir = ''
   else:
-    # save_dir: save_dir/tag
-    cfg.save_dir = os.path.join(cfg.save_dir, cfg.tag)
+    # save_dir: {save_dir}/{tag}/{yaml_name_without_extension}
+    yaml_name = os.path.basename(cfg.config).split('.')[0]
+    cfg.save_dir = os.path.join(cfg.save_dir, cfg.tag, yaml_name)
     if os.path.exists(cfg.save_dir):
       log.warning(f'The same save_dir already exists: {cfg.save_dir}')
       if cfg.from_scratch:

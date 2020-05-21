@@ -27,9 +27,11 @@
 - [x] supervised, label smoothing, randaugment: use student hyper params
 - [x] TFrecord 경로 수정 (지금 수정하면 이어서 학습 불가 - 연기)
 
-- [ ] 논문 내용 다시 점검
-- [ ] 하이퍼 파라미터 튜닝 코드 구현 ( ray? cfg 외부변경 가능하도록 )
-- [ ] hyper opt / mlflow
+- [x] 논문 내용 다시 점검
+- [x] 하이퍼 파라미터 튜닝 코드 구현 ( ray? cfg 외부변경 가능하도록 )
+- [x] Asyncronous Hyperband scheduler
+- [x] Bayesian hyperparameter search
+
 - [ ] 더 빠르게 학습 가능한지 확인(uda 미리 저장)
 - [ ] mpl 제대로 학습이 되는지 확인
 

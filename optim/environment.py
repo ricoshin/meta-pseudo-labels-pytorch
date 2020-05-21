@@ -22,10 +22,6 @@ def _to_fmt(*args, delimiter=' | '):
 
 
 class TrainingEnvironment:
-  """This class supports 2 different modes where the one is to automatically
-  deploy hyperparameter tuning trials using 'Ray' module and the other is to
-  train models in a customized way, which can make things go more flexible
-  than sticking to the tuning framework."""
   def __init__(self, cfg):
     self._setup_base(cfg)
 
@@ -85,7 +81,6 @@ class TrainingEnvironment:
       avgmeter_train = self._train_unit(tuning=False)
       avgmeter_valid = self._test_unit(tuning=False, mode='valid')
       self.m.monitor.watch(avgmeter_valid[cfg.valid.metric])
-
       # save & log
       with self.m.logging():
         self.m.save('last')
@@ -111,35 +106,41 @@ class TrainingEnvironment:
 
 
 class TuningEnvironment(Trainable, TrainingEnvironment):
+  _trainenv_kwargs = {}
+
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
 
-  def _setup(self, tune_cfg):
-    # import pdb; pdb.set_trace()
-    assert isinstance(tune_cfg, dict)
-    # self._setup_called = True
-    # take original config out
-    cfg = tune_cfg['cfg']
-    del tune_cfg['cfg']
-    if 'datasets' in tune_cfg:
-      datasets = get_pinned_object(tune_cfg['datasets'])
-      del tune_cfg['datasets']
-    else:
-      datasets = None
-    # then update with selected hyper params by Ray
-    # nothing happens when there's no other tuning configs.
-    cfg.update_dotmap(tune_cfg)
-    # now we can go as usual
-    self._setup_base(cfg, datasets=datasets)
+  @staticmethod
+  def with_trainenv_args(**kwargs):
+    assert 'cfg' in kwargs, 'missing argument.'
+    assert isinstance(kwargs['cfg'], Config)
+    return type("TuningEnvironmentWithTrainArgs",
+                (TuningEnvironment, ),
+                {'_trainenv_kwargs': kwargs})
+
+  def _setup(self, tuning_cfg):
+    assert isinstance(tuning_cfg, dict)
+    assert (self.__class__.__name__ == 'TuningEnvironmentWithTrainArgs',
+            'Use the class returned from .with_trainenv_args().')
+    kwargs = self.__class__._trainenv_kwargs
+    for key, value in kwargs.items():
+      if key == 'datasets':
+        kwargs[key] = get_pinned_object(value)
+      elif key == 'cfg':
+        value.update_dotmap(tuning_cfg)
+      else:
+        raise Exception(f'Unexpected pre-set trainenv argument:{key}')
+    self._setup_base(**kwargs)
 
   def _train(self):
     """ray.tune() takes care of this function during hyperparameter tuning."""
     avgmeter_train = self._train_unit(tuning=True)
-    avgmeter_test = self._test_unit(tuning=True, mode='valid')
+    avgmeter_valid = self._test_unit(tuning=True, mode='valid')
     return {
       'step': self.m.step,
       'is_finished': self.m.is_finished,
-      self.cfg.valid.metric: avgmeter_test[self.cfg.valid.metric],
+      self.cfg.valid.metric: avgmeter_valid[self.cfg.valid.metric],
       }
 
   def _save(self, save_dir):

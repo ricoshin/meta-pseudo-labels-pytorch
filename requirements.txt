@@ -4,3 +4,4 @@ dotmap
 ray
 tensorboard
 tensorboardx
+bayesian_optimization

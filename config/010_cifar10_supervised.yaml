@@ -16,12 +16,8 @@ stdn:
   lr: 0.3
   dropout: 0.35
 tune:
-  stdn.lr:
-    sampler: loguniform
-    values: [0.0001, 1.0]
-  stdn.dropout:
-    sampler: uniform
-    values: [0, 1]
-  batch_size.sup:
-    sampler: uniform
-    values: [32, 512]
+  stdn.lr: [0.0001, 1.0]
+  stdn.dropout: [0, 0.5]
+  batch_size.sup: [64, 512]
+  comm.w_decay: [0.001, 0.00001]
+  comm.bn_decay: [0.9, 0.99]
