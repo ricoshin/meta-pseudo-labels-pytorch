@@ -121,8 +121,8 @@ class TuningEnvironment(Trainable, TrainingEnvironment):
 
   def _setup(self, tuning_cfg):
     assert isinstance(tuning_cfg, dict)
-    assert (self.__class__.__name__ == 'TuningEnvironmentWithTrainArgs',
-            'Use the class returned from .with_trainenv_args().')
+    assert self.__class__.__name__ == 'TuningEnvironmentWithTrainArgs', \
+            'Use the class returned from .with_trainenv_args().'
     kwargs = self.__class__._trainenv_kwargs
     for key, value in kwargs.items():
       if key == 'datasets':

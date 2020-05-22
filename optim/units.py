@@ -1,5 +1,9 @@
 import logging
 
+import torch
+# from torch.autograd import grad
+from torchviz import make_dot
+
 from optim.metric import topk_accuracy, AverageMeter
 from utils import concat
 from utils.debugger import getSignalCatcher
@@ -10,6 +14,10 @@ sigquit = getSignalCatcher('SIGQUIT')
 
 def _to_fmt(*args, delimiter=' | '):
   return delimiter.join(map(str, args))
+
+def _check_params(ctrl):
+  any_param = [p for p in ctrl.model.parameters()][1]
+  return any_param.clone()
 
 
 def train(cfg, iterable, ctrl_a, ctrl_b, loaders, losses):
@@ -41,9 +49,9 @@ def train(cfg, iterable, ctrl_a, ctrl_b, loaders, losses):
     # meta peudo labels
     if cfg.method.is_mpl:
       # ctrl_a: teacher, ctrl_b: student
-      yu_pred_b = ctrl_b.model(xu)
-      if not is_uda:
+      if not cfg.method.is_uda:
         yu_pred_a = ctrl_a.model(xu)
+      yu_pred_b = ctrl_b.model(xu)
       loss_mpl_b = losses.mpl_student(yu_pred_b, yu_pred_a)
       loss_mpl_b.backward(retain_graph=True, create_graph=True)
       ctrl_b.step_all(clip_grad=cfg.optim.clip_grad)
@@ -56,8 +64,10 @@ def train(cfg, iterable, ctrl_a, ctrl_b, loaders, losses):
       loss_total += loss_mpl_a
 
     loss_total.backward()
-    ctrl_a.step_all(clip_grad=cfg.optim.clip_grad)
+    with torch.no_grad():
+      ctrl_a.step_all(clip_grad=cfg.optim.clip_grad)
     if ctrl_b:
+      ctrl_b.detach_()
       ctrl_b.model.zero_grad()
 
     ys_pred = ys_pred_a if not cfg.method.is_mpl else ys_pred_b

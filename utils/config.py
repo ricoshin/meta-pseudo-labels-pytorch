@@ -78,7 +78,7 @@ def post_process(cfg):
 
 
 def sanity_check(cfg):
-  assert cfg.comm.n_steps >= cfg.batch_size.sup
+  assert cfg.n_labeled >= cfg.batch_size.sup
   assert cfg.method.base in ['sup', 'ra', 'uda']
   assert cfg.valid.metric in ['top1', 'loss']
   assert cfg.uda.tsa_schedule in ['', 'linear', 'log', 'exp']
@@ -101,14 +101,25 @@ def init_config(args):
   logger.set_stream_handler('main', cfg.log_level)
   logger.set_stream_handler('result', cfg.log_level)
 
+  if cfg.autotag:
+    date = time.strftime("%m%d", time.gmtime(time.time()))
+    yaml_name = os.path.basename(cfg.config).split('.')[0]
+    if cfg.tag:
+      cfg.tag = f"{date}/{yaml_name}_{cfg.tag}"
+    else:
+      tag_num = 0
+      tag_gen = lambda n: f"{date}/{yaml_name}_" + str(tag_num).zfill(3)
+      while os.path.exists(tag_gen(tag_num)):
+        tag_num += 1
+      cfg.tag = tag_gen(tag_num)
+
   # SAVE_DIR
   if not cfg.tag:
     log.warning(f"Nothing will be saved unless '--tag' is given.")
     cfg.save_dir = ''
   else:
-    # save_dir: {save_dir}/{tag}/{yaml_name_without_extension}
-    yaml_name = os.path.basename(cfg.config).split('.')[0]
-    cfg.save_dir = os.path.join(cfg.save_dir, cfg.tag, yaml_name)
+    # save_dir: {save_dir}/{tag}
+    cfg.save_dir = os.path.join(cfg.save_dir, cfg.tag)
     if os.path.exists(cfg.save_dir):
       log.warning(f'The same save_dir already exists: {cfg.save_dir}')
       if cfg.from_scratch:

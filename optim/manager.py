@@ -30,10 +30,16 @@ class ModelControl:
     self.model.eval()
     return self
 
-  def step_all(self, clip_grad=None):
+  def detach_(self):
+    for param in self.model.parameters():
+      param.detach_().requires_grad_(True)
+      param.retain_grad()
+
+
+  def step_all(self, clip_grad=None, debug=False):
     if clip_grad:
       clip_grad_norm_(self.model.parameters(), clip_grad)
-    self.optim.step()
+    self.optim.step(debug=debug)
     self.optim.zero_grad()
     self.sched.step()
 
@@ -69,7 +75,7 @@ class TrainingManager:
     self.stdn = ModelControl(model, optim, sched)
     self.model_ctrls['stdn'] = self.stdn
 
-    if cfg.method.mpl:
+    if cfg.method.is_mpl:
       log.info('Create a teacher model control.')
       model = get_model(dropout=cfg.tchr.dropout, **model_kwargs)
       optim = get_optimizer(model=model, lr=cfg.tchr.lr, **optim_kwargs)
@@ -82,7 +88,7 @@ class TrainingManager:
 
   def strf(self, delimiter=' | '):
     tag = self.cfg.tag if self.cfg.tag else 'no_tag'
-    mpl_postfix = '_mpl' if self.cfg.method.mpl else ''
+    mpl_postfix = '_mpl' if self.cfg.method.is_mpl else ''
     return delimiter.join([
       f'{Color.SELECTED}{tag}{Color.END}',
       f'method: {self.cfg.method.base +  mpl_postfix}',

@@ -8,7 +8,7 @@ _signal_catchers = {}
     You can catch any signal interrupt such as:
     ctrl + c : SIGINT
     ctrl + \ : SIGQUIT
-    ctrl + z : SIGTSTOP
+    ctrl + z : SIGTSTP
 
   Example:
     sigint = getSignalCatcher('SIGINT')

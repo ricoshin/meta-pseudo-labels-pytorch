@@ -7,7 +7,7 @@ valid:
   interval: 200
 method:
   base: uda
-  mpl: False
+  is_mpl: False
 batch_size:
   sup: 128   # 64
   uns: 128  # 64 * 7 (updated in the official code on 3 Feb)

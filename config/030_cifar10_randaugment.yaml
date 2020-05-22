@@ -7,7 +7,7 @@ valid:
   interval: 500
 method:
   base: ra
-  mpl: False
+  is_mpl: False
 batch_size:
   sup: 128
   # uns: 128
@@ -18,3 +18,12 @@ stdn:
 randaug:
   n: 3
   m: 4
+tune:
+  stdn.lr: [0.001, 1.0]
+  stdn.dropout: [0, 1]
+  optim.momentum: [0.5, 0.999]
+  # batch_size.sup: [64, 512]
+  comm.w_decay: [0.001, 0.00001]
+  comm.bn_decay: [0.5, 0.999]
+  randaug.n: [1, 15]
+  randaug.m: [1, 20]

@@ -2,6 +2,7 @@ git+https://github.com/ildoonet/pytorch-gradual-warmup-lr.git
 
 dotmap
 ray
+torchviz
 tensorboard
 tensorboardx
 bayesian_optimization

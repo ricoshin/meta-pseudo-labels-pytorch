@@ -8,6 +8,9 @@ A PyTorch implementation of [Meta Pseudo Labels](https://arxiv.org/abs/2003.1058
 * Scipy
 * [DotMap](https://github.com/drgrib/dotmap)
 * [pytorch-gradual-warmup-lr](https://github.com/ildoonet/pytorch-gradual-warmup-lr)
+* ray (+TesorboardX; optional)
+* bayesian_optimization
+* torchviz (optional)
 
 ## How to Run
 ```

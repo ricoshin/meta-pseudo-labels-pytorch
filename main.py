@@ -15,18 +15,22 @@ parser.add_argument('--save_dir', type=str, default='out')
 parser.add_argument('--config_default', type=str,
                     default='./config/000_default.yaml')
 parser.add_argument('--config', type=str,
-                    default='./config/006_cifar10_supervised_mpl.yaml')
+                    default='./config/002_cifar10_debug.yaml')
 parser.add_argument('--log_level', type=str, default='info')
 parser.add_argument('--debug', action='store_true')
 parser.add_argument('--train_only', action='store_true')
 parser.add_argument('--test_only', action='store_true')
 parser.add_argument('--from_scratch', action='store_true')
 parser.add_argument('--loader_workers', type=int, default=4)
+parser.add_argument('--autotag', action='store_true')
 parser.add_argument('--tag', type=str, default='')
 
 
 if __name__ == '__main__':
   # config
+
+
+
   args = parser.parse_args()
   assert not (args.train_only == True and args.test_only == True)
   cfg = init_config(vars(args))
@@ -36,6 +40,10 @@ if __name__ == '__main__':
 
   log.newline()
   log.info(cfg)
+
+  import time
+  with Watch('test', log) as t:
+    time.sleep(5)
 
   if cfg.debug:
     log.warning('Debugging mode!')

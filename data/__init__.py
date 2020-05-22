@@ -16,7 +16,7 @@ log = getLogger('main')
 def get_dataloaders(cfg, datasets):
   log.info('Load dataset.')
   data_train, data_test = datasets
-  need_uns = cfg.method.base == 'uda' or cfg.method.mpl
+  need_uns = cfg.method.base == 'uda' or cfg.method.is_mpl
   # data_train, data_test = get_dataset(cfg.dataset, cfg.data_dir)
   # split labeled(supervised) & unlabled(unsupervised) set
   data_sup = Subset(data_train, range(len(data_train))[:cfg.n_labeled])
@@ -25,7 +25,7 @@ def get_dataloaders(cfg, datasets):
   # different transforms(augumentation) for each dataset
   trans_sup, trans_uns, trans_test = get_transforms(
     cfg.dataset, cfg.method.base, cfg.aug.default, cfg.aug.cutout,
-    randaug_args=(cfg.randaug.n, cfg.randaug.m))
+    randaug_args=(int(cfg.randaug.n), int(cfg.randaug.m)))
   # attach transforms to the datasets
   data_sup = TransformedDataset(data_sup, trans_sup)
   if need_uns:

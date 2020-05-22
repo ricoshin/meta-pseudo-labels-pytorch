@@ -6,3 +6,6 @@ CUDA_VISIBLE_DEVICES=3 python main.py --config ./config/005_cifar10_uda.yaml --t
 CUDA_VISIBLE_DEVICES=0 python main.py --config ./config/006_cifar10_supervised_mpl.yaml --tag 0518/supervised_mpl
 CUDA_VISIBLE_DEVICES=1 python main.py --config ./config/007_cifar10_randaugment_mpl.yaml --tag 0518/randaugment_mpl
 CUDA_VISIBLE_DEVICES=2 python main.py --config ./config/008_cifar10_uda_mpl.yaml --tag 0518/uda_mpl
+
+python tune.py  --autotag --config ./config/010_cifar10_supervised.yaml --tag batch_fixed
+python tune.py  --autotag --config ./config/020_cifar10_label_smoothing.yaml --tag batch_fixed

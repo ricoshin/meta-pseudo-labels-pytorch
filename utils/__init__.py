@@ -1,4 +1,5 @@
 import torch
+from torchviz import make_dot
 
 
 def concat(tensors, retriever=False):
@@ -13,3 +14,7 @@ def concat(tensors, retriever=False):
       concated = concated[len_:]
     return out
   return out, splitter
+
+
+def graph(tensor):
+    print(make_dot(tensor))

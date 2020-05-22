@@ -27,7 +27,7 @@ def train(cfg, manager, tuning=False):
   # for brevity
   m = manager
   is_uda = cfg.method.base == 'uda'
-  is_mpl = cfg.method.mpl
+  is_mpl = cfg.method.is_mpl
   metric = cfg.valid.metric
   # load model if possible
   m.load_if_available(cfg, tag='last', verbose=True)
@@ -36,7 +36,7 @@ def train(cfg, manager, tuning=False):
     # return empty results
     return None, None
   # baseline: netA only / mpl: netA(teacher), netB(student)
-  if cfg.method.mpl:
+  if cfg.method.is_mpl:
     netA, netB = m.tchr, m.stdn
   else:
     netA, netB = m.stdn, None

@@ -26,14 +26,16 @@
 - [x] .yaml 내용 정리, default config
 - [x] supervised, label smoothing, randaugment: use student hyper params
 - [x] TFrecord 경로 수정 (지금 수정하면 이어서 학습 불가 - 연기)
-
 - [x] 논문 내용 다시 점검
 - [x] 하이퍼 파라미터 튜닝 코드 구현 ( ray? cfg 외부변경 가능하도록 )
 - [x] Asyncronous Hyperband scheduler
 - [x] Bayesian hyperparameter search
 
+- [x] mpl 제대로 학습이 되는지 확인
+- [x] second order 문제
+
 - [ ] 더 빠르게 학습 가능한지 확인(uda 미리 저장)
-- [ ] mpl 제대로 학습이 되는지 확인
+- [ ] 단순한 KD의 경우에도 성능이 향상됨? 조절?
 
 - [ ] default = simple + cutout
 - [ ] 실행 자동화 코드 구현

@@ -9,7 +9,7 @@ method:
   ##############
   base: sup  # sup, ra, uda
   ##############
-  mpl: False
+  is_mpl: False
 optim:
   name: sgd
   nesterov: True

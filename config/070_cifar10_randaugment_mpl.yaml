@@ -7,7 +7,7 @@ valid:
   interval: 200
 method:
   base: ra
-  mpl: True
+  is_mpl: True
 batch_size:
   sup: 128
   uns: 128

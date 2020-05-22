@@ -13,6 +13,8 @@ class Watch:
     self.start = time.time()
 
   def __exit__(self, type, value, trace_back):
-    t = time.time() - self.start
-    t = time.strftime("(%Hhrs %Mmins %Ssecs)", time.gmtime(t))
-    self.logger.info(f'Watch({self.name}): {t}')
+    secs = time.time() - self.start
+    hrs = int(secs // 3600)
+    mins = int((secs % 3600) // 60)
+    secs = int(secs % 60)
+    self.logger.info(f'Watch({self.name}): {hrs} hrs {mins} mins {secs} secs')

@@ -7,13 +7,14 @@ valid:
   interval: 10
 method:
   base: uda  # sup, ra, uda
-  mpl: True
+  is_mpl: True
 optim:
   lb_smooth: 0.1
 comm:
   n_steps: 60
+  n_warmup: 1
 batch_size:
-  sup: 512
+  sup: 128
   uns: 128
   test: 128
 stdn:

@@ -1,7 +1,7 @@
 import logging
 
 import torch
-from torch import optim
+# from torch import optim
 import torch.backends.cudnn as cudnn
 from torch.nn import DataParallel
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -57,8 +57,10 @@ def get_optim_cls(optim_name):
 
 
 def get_optimizer(optim_name, model, **kwargs):
-  optim_cls = getattr(optim, get_optim_cls(optim_name))
-  optimizer = optim_cls(model.parameters(), **kwargs)
+  # optim_cls = getattr(optim, get_optim_cls(optim_name))
+  # optimizer = optim_cls(model.parameters(), **kwargs)
+  from optim.sgd import ModuleSGD
+  optimizer = ModuleSGD(model, **kwargs)
   return optimizer
 
 
