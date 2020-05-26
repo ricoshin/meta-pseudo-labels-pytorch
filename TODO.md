@@ -30,9 +30,12 @@
 - [x] 하이퍼 파라미터 튜닝 코드 구현 ( ray? cfg 외부변경 가능하도록 )
 - [x] Asyncronous Hyperband scheduler
 - [x] Bayesian hyperparameter search
-
 - [x] mpl 제대로 학습이 되는지 확인
 - [x] second order 문제
+
+- [x] module 단위 optimizer (in-place 더이상 불가능 / 모듈 자체 ref가 필요)
+- [x] GPU debugger
+- [x] Memory leak 해결
 
 - [ ] 더 빠르게 학습 가능한지 확인(uda 미리 저장)
 - [ ] 단순한 KD의 경우에도 성능이 향상됨? 조절?
