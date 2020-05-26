@@ -1,8 +1,17 @@
 import argparse
 import logging
+import os
+import sys
+
+if 'DEBUG_DEVICE' in os.environ:
+  # this has to be done before importing PyTorch
+  os.environ['CUDA_VISIBLE_DEVICES'] = os.environ['DEBUG_DEVICE']
+  os.environ['CUDA_LAUNCH_BLOCKING']='1'
 
 from optim.environment import TrainingEnvironment
 from utils.config import Config, init_config, sanity_check
+# from utils.gpu_profile import init_gpu_profile
+from utils.gpu_profile import GPUProfiler
 from utils.watch import Watch
 
 
@@ -28,11 +37,7 @@ parser.add_argument('--tag', type=str, default='')
 
 if __name__ == '__main__':
   # config
-
-
-
   args = parser.parse_args()
-  assert not (args.train_only == True and args.test_only == True)
   cfg = init_config(vars(args))
   sanity_check(cfg)
   if 'tune' in cfg:
@@ -41,12 +46,28 @@ if __name__ == '__main__':
   log.newline()
   log.info(cfg)
 
-  import time
-  with Watch('test', log) as t:
-    time.sleep(5)
-
   if cfg.debug:
     log.warning('Debugging mode!')
+
+  if 'DEBUG_DEVICE' in os.environ:
+    gpu_profiler = GPUProfiler.instance(
+      gpu_id=int(os.environ['DEBUG_DEVICE']),
+      tensor_sizes=False,
+      ignore_external=True,
+      show_diff_only=True,
+      console_out=True,
+      # white_list=['optim'],
+      # white_list=['optim.units.train'],
+      white_list=['optim'],
+      info_arg_names=['step', 'n'],
+      # condition={'step': lambda step: step == 2},
+      )
+    gpu_profiler.global_set_trace()
+    cfg.train_only = True
+    cfg.comm.n_steps = 50
+    cfg.valid.interval = 10
+    log.warning("GPU profile will be saved to : "
+                f"{gpu_profiler.out_filename}")
 
   # main
   with Watch('main', log) as t:
@@ -70,6 +91,10 @@ if __name__ == '__main__':
       log.info('[Test session]')
       avgmeter_test = env.test(cfg)
       log_result.critical(avgmeter_test)
+
+  if 'DEBUG_DEVICE' in os.environ:
+    log.warning('Check out the GPU profile: '
+                f'less -R {gpu_profiler.out_filename}')
 
   log.newline()
   log.info('[End_of_program]')

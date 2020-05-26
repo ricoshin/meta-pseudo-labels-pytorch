@@ -18,15 +18,15 @@ def get_log_level(level):
 def set_stream_handler(name, level):
   assert isinstance(level, str)
   # set level
-  log = logging.getLogger(name)
-  log.setLevel(get_log_level(level))
+  logger = logging.getLogger(name)
+  logger.setLevel(get_log_level(level))
   # stdio standard handler
   stream_handler = logging.StreamHandler()
   formatter = MyFormatter(**formatter_kwargs())
   stream_handler.setFormatter(formatter)
   stream_handler.setLevel(get_log_level(level))
-  log.stream_handler = stream_handler
-  log.addHandler(stream_handler)
+  logger.stream_handler = stream_handler
+  logger.addHandler(stream_handler)
   # stdio newline handler
   newline_handler = logging.StreamHandler()
   newline_handler.setFormatter(fmt='')
@@ -40,20 +40,22 @@ def set_stream_handler(name, level):
         getattr(self, log_level)('')
     self.removeHandler(self.newline_handler)
     self.addHandler(self.stream_handler)
-  log.newline_handler = newline_handler
-  log.newline = types.MethodType(newline, log)
+  logger.newline_handler = newline_handler
+  logger.newline = types.MethodType(newline, logger)
+  return logger
 
 
 def set_file_handler(name, level, save_dir, filename):
   assert isinstance(level, str)
   # file handler
-  log = logging.getLogger(name)
+  logger = logging.getLogger(name)
   log_file = os.path.join(save_dir, filename)
   file_handler = logging.FileHandler(log_file)
   formatter = MyFormatter(**formatter_kwargs())
   file_handler.setFormatter(formatter)
   file_handler.setLevel(get_log_level(level))
-  log.addHandler(file_handler)
+  logger.addHandler(file_handler)
+  return logger
 
 
 class MyFormatter(logging.Formatter):
@@ -63,7 +65,7 @@ class MyFormatter(logging.Formatter):
     if record.levelno == logging.DEBUG:
       level_name = f'{Color.VIOLET}[DEBUG]{Color.END}'
     elif record.levelno == logging.WARNING:
-      level_name = f'{Color.RED}[WARNING]{Color.END}'
+      level_name = f'{Color.GREEN2}[WARNING]{Color.END}'
     elif record.levelno == logging.ERROR:
       level_name = f'{Color.RED}[ERROR]{Color.END}'
     elif record.levelno == logging.CRITICAL:

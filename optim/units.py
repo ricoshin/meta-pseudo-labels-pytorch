@@ -7,6 +7,11 @@ from torchviz import make_dot
 from optim.metric import topk_accuracy, AverageMeter
 from utils import concat
 from utils.debugger import getSignalCatcher
+from utils.gpu_profile import GPUProfiler, get_gpu_memory
+from pytorch_memlab import profile, profile_every, MemReporter
+from utils import graph, depth
+
+import gc
 
 log = logging.getLogger('main')
 sigquit = getSignalCatcher('SIGQUIT')
@@ -15,22 +20,29 @@ sigquit = getSignalCatcher('SIGQUIT')
 def _to_fmt(*args, delimiter=' | '):
   return delimiter.join(map(str, args))
 
+
 def _check_params(ctrl):
   any_param = [p for p in ctrl.model.parameters()][1]
   return any_param.clone()
 
 
+# @profile_every(1)
 def train(cfg, iterable, ctrl_a, ctrl_b, loaders, losses):
   avgmeter = AverageMeter('train')
+  reporter_a = MemReporter(ctrl_a.model)
+  reporter_b = MemReporter(ctrl_b.model)
+  report_a = lambda : reporter_a.report()
+  report_b = lambda : reporter_b.report()
   for step in iterable:
     # labeled(supervised) data
+    # if step >= 0:
+    #   import pdb; pdb.set_trace()
     xs, ys = next(loaders.sup)
     xs, ys = xs.cuda(), ys.cuda()
     if cfg.method.is_uda or cfg.method.is_mpl:
       # unlabeled(unsupervised) data
       xu, xuh = next(loaders.uns)
       xu, xuh = xu.cuda(), xuh.cuda()
-
     # supervised, randaugment
     if not cfg.method.is_uda:
       ys_pred_a = ctrl_a.model(xs)  # forward
@@ -51,28 +63,35 @@ def train(cfg, iterable, ctrl_a, ctrl_b, loaders, losses):
       # ctrl_a: teacher, ctrl_b: student
       if not cfg.method.is_uda:
         yu_pred_a = ctrl_a.model(xu)
+      # if step == 3:
+      #   from utils.gpu_profile import get_gpu_memory; get_gpu_memory(1)
+      #   import pdb; pdb.set_trace()
       yu_pred_b = ctrl_b.model(xu)
       loss_mpl_b = losses.mpl_student(yu_pred_b, yu_pred_a)
+
       loss_mpl_b.backward(retain_graph=True, create_graph=True)
       ctrl_b.step_all(clip_grad=cfg.optim.clip_grad)
-      ctrl_a.model.zero_grad()  # teacher should not be affected
 
-      xs, ys = next(loaders.sup)
-      xs, ys = xs.cuda(), ys.cuda()  # to see different xs
+      ctrl_a.model.zero_grad()  # teacher should not be affected
+      ctrl_b.model.zero_grad()
+
+      xs, ys = next(loaders.sup)  # to see different xs
+      xs, ys = xs.cuda(), ys.cuda()
       ys_pred_b = ctrl_b.model(xs)
       loss_mpl_a = losses.mpl_teacher(ys_pred_b, ys)
       loss_total += loss_mpl_a
 
     loss_total.backward()
-    with torch.no_grad():
-      ctrl_a.step_all(clip_grad=cfg.optim.clip_grad)
+    ctrl_a.step_all(clip_grad=cfg.optim.clip_grad)
+    ctrl_a.model.zero_grad()
     if ctrl_b:
       ctrl_b.detach_()
-      ctrl_b.model.zero_grad()
 
     ys_pred = ys_pred_a if not cfg.method.is_mpl else ys_pred_b
-    acc_top1 = topk_accuracy(ys_pred, ys, (1,))
+    acc_top1 = topk_accuracy(ys_pred.detach_(), ys, (1,))
     avgmeter.add(top1=acc_top1, num=ys.size(0))
+    # torch.cuda.empty_cache()
+    # gc.collect()
   return avgmeter
 
 

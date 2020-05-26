@@ -34,6 +34,8 @@ class ModelControl:
     for param in self.model.parameters():
       param.detach_().requires_grad_(True)
       param.retain_grad()
+    for buffer in self.model.buffers():
+      buffer.detach_()  # just in case
 
 
   def step_all(self, clip_grad=None, debug=False):
@@ -69,7 +71,7 @@ class TrainingManager:
     }
 
     log.info('Create a student model control.')
-    model = get_model(dropout=cfg.stdn.dropout, **model_kwargs)
+    model = get_model(dropout=cfg.stdn.dropout, name='stdn', **model_kwargs)
     optim = get_optimizer(model=model, lr=cfg.stdn.lr, **optim_kwargs)
     sched = get_scheduler(optim, cfg.comm.n_steps, cfg.comm.n_warmup)
     self.stdn = ModelControl(model, optim, sched)
@@ -77,7 +79,7 @@ class TrainingManager:
 
     if cfg.method.is_mpl:
       log.info('Create a teacher model control.')
-      model = get_model(dropout=cfg.tchr.dropout, **model_kwargs)
+      model = get_model(dropout=cfg.tchr.dropout, name='tchr', **model_kwargs)
       optim = get_optimizer(model=model, lr=cfg.tchr.lr, **optim_kwargs)
       sched = get_scheduler(optim, cfg.comm.n_steps, cfg.comm.n_warmup)
       self.tchr = ModelControl(model, optim, sched)
@@ -94,7 +96,6 @@ class TrainingManager:
       f'method: {self.cfg.method.base +  mpl_postfix}',
       f'step: {self.step:7d}/{self.step_max:7d}',
       f'lr_stdn: {self.stdn.sched.get_lr()[0]:5.3f}',
-      # f'lr_s: {self.stdn.sched.get_lr()[0]:5.3f}',
       ])
 
   @property

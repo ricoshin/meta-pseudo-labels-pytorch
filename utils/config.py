@@ -30,6 +30,13 @@ class Config(DotMap):
   """A singleton class for managing global configuration."""
   _instance = None
 
+  @staticmethod
+  def instance():
+    if Config._instance:
+      return Config._instance
+    else:
+      return Config()
+
   def __add__(self, other):
     assert isinstance(other, Config)
     self_dict = self.toDict()
@@ -63,13 +70,6 @@ class Config(DotMap):
     del self[key]
     return detached
 
-  @staticmethod
-  def get_instance():
-    if Config._instance:
-      return Config._instance
-    else:
-      return Config()
-
 
 def post_process(cfg):
   if cfg.method.base == 'uda':
@@ -78,6 +78,7 @@ def post_process(cfg):
 
 
 def sanity_check(cfg):
+  assert not (cfg.train_only and cfg.test_only)
   assert cfg.n_labeled >= cfg.batch_size.sup
   assert cfg.method.base in ['sup', 'ra', 'uda']
   assert cfg.valid.metric in ['top1', 'loss']
@@ -88,9 +89,8 @@ def sanity_check(cfg):
 def init_config(args):
   """Function for initializing coniguration."""
   assert isinstance(args, collections.abc.Mapping)
-
   # GET CONFIG & UPDATE ARGS
-  cfg = Config.get_instance()
+  cfg = Config.instance()
   cfg += Config(args)
 
   # LOG LEVEL

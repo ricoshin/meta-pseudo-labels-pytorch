@@ -1,12 +1,12 @@
 # 001_cifar_debug.yaml
-model: wresnet_28_2
+model: wresnet_4_1
 dataset: cifar10
 n_labeled: 4000
 valid:
   metric: top1
   interval: 10
 method:
-  base: uda  # sup, ra, uda
+  base: sup  # sup, ra, uda
   is_mpl: True
 optim:
   lb_smooth: 0.1

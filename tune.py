@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
   # overwrite
   cfg.update_dotmap({
-    'loader_workers': cfg.cpu_per_trial,
+    'loader_workers': int(cfg.cpu_per_trial),
     'n_labeled': 4000,
     # 'comm.n_steps': 500,
     'comm.n_steps': 300 if cfg.debug else 100000,

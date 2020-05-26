@@ -1,5 +1,8 @@
 """Reference: https://github.com/meliketoy/wide-resnet.pytorch"""
+from collections import OrderedDict
 import logging
+import types
+import weakref
 
 import torch
 import torch.nn as nn
@@ -25,6 +28,30 @@ def conv_init(m):
   elif classname.find('BatchNorm') != -1:
     init.constant_(m.weight, 1)
     init.constant_(m.bias, 0)
+
+
+def patch_getattr(module):
+  class AttrPatchedClass(type(module)):
+    def __getattr__(self, name):
+      attr = super(module.__class__, self).__getattr__(name)
+      return weakref.ref(attr)()
+
+    def __getattribute__(self, name):
+      attr = object.__getattribute__(self, name)
+      if name in ['_parameters', '_buffers', '_modules']:
+        # weak reference for proper garbage collection
+        attr = weakref.ref(attr)()
+      return attr
+  class_name = module.__class__.__name__
+  module.__class__ = AttrPatchedClass
+  module.__class__.__name__ = f"AttrPatched{class_name}"
+
+
+class ViewThenLinear(nn.Linear):
+  """to plug into nn.Sequential"""
+  def forward(self, x):
+    x = x.view(x.size(0), -1)
+    return super(ViewThenLinear, self).forward(x)
 
 
 class WideBasic(nn.Module):
@@ -53,9 +80,11 @@ class WideBasic(nn.Module):
 
 
 class WideResNet(nn.Module):
-  def __init__(
-    self, depth, widen_factor, bn_momentum, dropout_rate, num_classes):
+  def __init__(self, depth, widen_factor, bn_momentum, dropout_rate,
+               num_classes, name='WideResNet'):
     super(WideResNet, self).__init__()
+
+    self.name = name
     self.in_planes = 16
 
     assert ((depth-4)%6 ==0), 'Wide-resnet depth should be 6n+4'
@@ -65,15 +94,40 @@ class WideResNet(nn.Module):
     log.info('Building Wide-Resnet %dx%d.' %(depth, k))
     nStages = [16, 16*k, 32*k, 64*k]
 
-    self.conv1 = conv3x3(3,nStages[0])
-    self.layer1 = self._wide_layer(
-      WideBasic, nStages[1], n, bn_momentum, dropout_rate, stride=1)
-    self.layer2 = self._wide_layer(
-      WideBasic, nStages[2], n, bn_momentum, dropout_rate, stride=2)
-    self.layer3 = self._wide_layer(
-      WideBasic, nStages[3], n, bn_momentum, dropout_rate, stride=2)
-    self.bn1 = nn.BatchNorm2d(nStages[3], momentum=bn_momentum)
-    self.linear = nn.Linear(nStages[3], num_classes)
+    modules = nn.Sequential(OrderedDict([
+      ('conv0', conv3x3(3,nStages[0])),
+      ('wide1', self._wide_layer(
+        WideBasic, nStages[1], n, bn_momentum, dropout_rate, stride=1)),
+      ('wide2', self._wide_layer(
+        WideBasic, nStages[2], n, bn_momentum, dropout_rate, stride=2)),
+      ('wide3', self._wide_layer(
+        WideBasic, nStages[3], n, bn_momentum, dropout_rate, stride=2)),
+      ('bn4', nn.BatchNorm2d(nStages[3], momentum=bn_momentum)),
+      ('relu4', nn.ReLU(inplace=True)),
+      ('avg_pool4', nn.AvgPool2d(8)),
+      ('linear4', ViewThenLinear(nStages[3], num_classes)),
+    ]))
+    # to have distinguishable name btw std & tchr
+    self.add_module(name, modules)
+    self.apply(patch_getattr)
+    self.reset()
+
+    # for debugging
+    # self._paramters_backup = self._parameters
+    # def _parameters(self):
+    #   import pdb; pdb.set_trace()
+    #   return self._paramters_backup
+    # self._parameters = property(_parameters)
+
+  def reset(self):
+    def param_to_tensor(module):
+      for name, param in module._parameters.items():
+        module._parameters[name] = param.data.requires_grad_(True)
+    self.apply(param_to_tensor)
+  #   self.apply = self._apply_disabled
+  #
+  # def _apply_disabled(self):
+  #   raise NotImplementedError
 
   def _wide_layer(
     self, block, planes, num_blocks, bn_momentum, dropout_rate, stride):
@@ -85,16 +139,8 @@ class WideResNet(nn.Module):
         self.in_planes, planes, bn_momentum, dropout_rate, stride))
       self.in_planes = planes
 
-    return nn.Sequential(*layers)
+    return nn.Sequential(OrderedDict([
+      (f'block{i}', l) for i, l in enumerate(layers)]))
 
   def forward(self, x):
-    out = self.conv1(x)
-    out = self.layer1(out)
-    out = self.layer2(out)
-    out = self.layer3(out)
-    out = F.relu(self.bn1(out))
-    out = F.avg_pool2d(out, 8)
-    out = out.view(out.size(0), -1)
-    out = self.linear(out)
-    
-    return out
+    return getattr(self, self.name)(x)
