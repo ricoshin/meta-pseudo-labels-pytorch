@@ -64,7 +64,7 @@ To see still images, you can refer to [implement.md](./implement.md).
 ### Baselines
 <img src = "./figures/00_baseline.gif" width="70%">
 
-To minimize duplicated code lines, baselines are implemented in a way where they share pipelines with others as much as possible. Basically, there exists two model templates which is represented as `model A` and `model B`, which can be alternatively replaced by 'student' or 'teacher' in MPL.  Baseline models take the place of `model A` and can be considered as stand-alone **student** model. This design choice was made to ease the reproduction of their incremental hyperparameter search scheme described in the parer.
+To minimize duplicated code lines, baselines are implemented in a way where they share pipelines with the others as much as possible. Basically, there exists two model templates which is represented as `model A` and `model B`, which can be alternatively replaced by 'student' or 'teacher' in MPL.  Baseline models take the place of `model A` and can be considered as stand-alone **student** model. This design choice was made to ease the reproduction of their incremental hyperparameter search scheme described in the parer.
 
 ### Baselines + MPL
 <img src = "./figures/10_baseline_mpl.gif" width="70%">
@@ -75,6 +75,39 @@ When MPL comes on the stage, you `model A` who was previously taking a role of a
 <img src = "./figures/20_two_phases.gif" width="70%">
 
 At each training step, in turn, we train student and teacher as described in the paper. The only thing we have to take caution is that when student is updated according to the guidance of the teacher, it has to create computational graphs of that updating operation, which is not the case in general, in preparation for backpropagating the signal down to the teacher afterwards.
+
+### Loss Functions ###
+|  |Supervised | Supervised <br>+ **MPL** | RandAug | RandAug <br>+ **MPL** | UDA | UDA <br>+ **MPL** |
+|--|:---:|:---:|:---:|:---:|:---:|:---:|
+| xs | sup_loss (S*) | sup_loss (T) <br> mpl_loss (T) | sup_loss(S*) | sup_loss(T) <br> mpl_loss(T) | sup_loss(S*) | sup_loss(T) <br> mpl_loss(T) |
+| xu | x | mpl_loss(S)| x | mpl_loss(S) | cnst_loss(S*) | mpl_loss(S) <br> cnst_loss(T) |
+
+* `xs`: labeled data for supervised learning
+* `xu`: unlabeled data for unsupervised learning
+* `sup_loss` : supervised loss
+    * for UDA : `model.losses.TrainingSignalAnnealingCELoss` (TSA scheduling)
+    * for the rest: `model.losses.LabelSmoothableCELoss` (with label smoothing if needed)
+* `cnst_loss`: consistency loss in UDA.
+    * `model.losses.ConsistencyKLDLoss`
+* `mpl_loss` : student and teacher training loss in MPL
+    * for teacher: `model.losses.LabelSmoothableCELoss`
+    * for student: `model.losses.SoftLabelCEWithLogitsLoss`
+* `S`, `T`: losses for training the student and the teacher, respectively.
+* `S*`: For the standard model that is not really the student but considered as it is.
+
+### Augmentations ###
+|  |Supervised | Supervised <br>+ **MPL** | RandAug | RandAug <br>+ **MPL** | UDA | UDA <br>+ **MPL** |
+|--|:---:|:---:|:---:|:---:|:---:|:---:|
+| xs | (default) | (default) | RandAug <br> (+ default) | RandAug <br> (+ default) | (default) | (default) |
+| xu | x | x | x | x | RandAug <br> (+ default) | RandAug <br> (+ default) |
+
+* `xs`, `xu`: ditto.
+* `default`: minimal augmentations used in previous works. (crop + horizontal flip)
+    * `augment.DefaultAugment`
+* `cutout` can also be included at the end.
+    * `augment.CutoutAugment`
+* `RandAug`: RandAugment
+    * `augment.RandAugment`
 
 ---
 
@@ -90,17 +123,19 @@ At each training step, in turn, we train student and teacher as described in the
 | UDA                   | 94.53 &plusmn; 0.18   | Ongoing               |
 | UDA + **MPL**         | 96.11 &plusmn; 0.07   | Ongoing               |
 
-- For `Supervised` baseline and the MPL-augmented version, we tuned the hyperparameters from scratch, not following the incremental method described in the paper.
-- It is highly likely that experiments that will follow on `RandAugment` can improve more. In the last experiment, we set training steps to be 100K which seemed to be too short as the performance improved even a few steps before the training steps ran out.  
+- We tuned the hyperparameters from scratch, not following the incremental method described in the paper. We allow the same resource for every methods, i.e. 256 trials using the same search algorithm as described in **Features** section. You can see the tuned hyperparameters in .yaml files in `./config`.
+- It is highly likely that result of following experiments on `RandAugment` improve more. In the last experiment, we set training steps to be 100K which seemed to be too short as the performance improved even a few steps before the training steps ran out.
+- As of this writing `RandAugment + MPL` is outperforming `RandAugment` with significant margin, specifically, at step 15500, **74.25%** without MPL and **77.04%** with MPL.
 - Experiments on `UDA` is still ongoing. We found a bug in the code and had it fixed, so we have to re-tune hyperparameters, which will take hours. We found that UDA baseline outperformed the rest in despite of the incomplete settings, and hope that UDA + MLP will perform even better. A question of time.
 
 ---
 
-## Findings
-- `Lable Smoothing` does not seem to contribute at all. When we searched the hyperparameters within relatively wide ranges, the estimated value was even an order of magnitude smaller than the reasonable start point 0.1.
+## Findings and Future Work
+- **Lable Smoothing** does not seem to contribute at all and even harms the performances sometimes. When we searched the hyperparameters within relatively wide ranges, the estimated value was even an order of magnitude smaller than the reasonable start point 0.1.
 - In the paper, they scaled both number of labeled data and training steps down to 10% for cost efficiency. However, in our conditions, those parameters found in the reduced scale did not extend to the full scale scenario.
-- With the `Supervised` baseline, even if we cut the MPL gradient coming toward the teacher, the student shows comparable performance compared to the MPL-driven version. Need to do some ablation tests to validate the effect of MPL gradient apart from knowledge distillation relying on the UDA-augmented teacher.
-- If you tune prediction sharpening techniques in UDA along with TSA scheduling in the aforementioned reduced scale, model can cheat  
+- With the `Supervised` baseline, even if we cut the MPL gradient coming toward the teacher, the student shows comparable performance compared to the MPL-driven version. Need to do some ablation tests to validate the effect of MPL gradient apart from knowledge distillation relying on the UDA-augmented teacher. Also, we should see that whether its performance gain merely comes from its doubled complexity or from its own excellence.
+- When we tuned **sharpening prediction** techniques of UDA along with **TSA** scheduling, in the aforementioned reduced scale, model ended up learning myopic strategy in which model did not make little efforts to sharpen its prediction. As TSA impedes the model to learn from labeled data at the early stage of the training, there could be no point of strongly relying on its own confidence. The **cosine decaying** of learning rate can also distort the tuning result for a similar reason.
+- For in-depth study, we should analysis the behavior of both teacher and student with respect to labeled and unlabeled data, and in which way the teacher is actually guiding the student.
 
 ---
 

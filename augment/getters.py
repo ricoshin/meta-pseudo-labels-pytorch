@@ -1,8 +1,7 @@
 from torchvision.transforms import transforms
-
-from augment.cutout import CutoutAugment
+from augment.simple import BaseAugment, DefaultAugment
 from augment.randaugment import RandAugment
-from augment.simple import BasicAugment, DefaultAugment
+from augment.cutout import CutoutAugment
 
 
 def get_transforms(dataset, base_method, aug_default, aug_cutout, randaug_args):
@@ -26,9 +25,9 @@ def get_transforms(dataset, base_method, aug_default, aug_cutout, randaug_args):
     trans_uns.append(DefaultAugment())
 
   # Basic augmentation (Normalization)
-  trans_sup.append(BasicAugment(dataset))
-  trans_uns.append(BasicAugment(dataset))
-  trans_test.append(BasicAugment(dataset))
+  trans_sup.append(BaseAugment(dataset))
+  trans_uns.append(BaseAugment(dataset))
+  trans_test.append(BaseAugment(dataset))
 
   # Cutout augmentation
   if aug_cutout > 0:

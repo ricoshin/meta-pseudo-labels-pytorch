@@ -1,7 +1,7 @@
 from torchvision.transforms import transforms
 
 
-class BasicAugment:
+class BaseAugment:
   def __init__(self, dataset):
     self.transforms = transforms.Compose([
       transforms.ToTensor(),
