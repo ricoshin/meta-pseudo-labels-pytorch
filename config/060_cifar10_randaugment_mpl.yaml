@@ -9,21 +9,21 @@ method:
   base: ra
   is_mpl: True
 optim:
-  momentum: 0.7128109194621965
+  momentum: 0.8382226448257213
 comm:
-  n_steps: 100000  
-  bn_decay: 0.5172675985011298
-  w_decay: 9.27582054766412e-05
+  n_steps: 100000
+  bn_decay: 0.43024727082126435
+  w_decay: 3.593594285202027e-05
 batch_size:
   sup: 128
   uns: 128
   test: 128
 stdn:
-  lr: 0.3
-  dropout: 0.35
+  lr: 0.42727430833868474
+  dropout: 0.19856988842711087
 tchr:
-  lr: 0.125
-  dropout: 0.5
+  lr: 0.797841165154608
+  dropout: 0.343346239774423
 randaug:
   n: 3
   m: 4

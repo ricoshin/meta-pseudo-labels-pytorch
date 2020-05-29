@@ -9,10 +9,8 @@ if 'DEBUG_DEVICE' in os.environ:
   os.environ['CUDA_LAUNCH_BLOCKING']='1'
 
 from optim.environment import TrainingEnvironment
+from utils import GPUProfiler, Watch
 from utils.config import Config, init_config, sanity_check
-# from utils.gpu_profile import init_gpu_profile
-from utils.gpu_profile import GPUProfiler
-from utils.watch import Watch
 
 
 log = logging.getLogger('main')
@@ -33,7 +31,6 @@ parser.add_argument('--from_scratch', action='store_true')
 parser.add_argument('--loader_workers', type=int, default=4)
 parser.add_argument('--autotag', action='store_true')
 parser.add_argument('--tag', type=str, default='')
-parser.add_argument('--load_dir', type=str, default='')
 
 
 if __name__ == '__main__':

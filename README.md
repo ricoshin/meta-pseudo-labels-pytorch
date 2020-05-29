@@ -1,6 +1,8 @@
 # Meta Pseudo Labels
 A PyTorch implementation of [Meta Pseudo Labels](https://arxiv.org/abs/2003.10580).
 
+---
+
 ## Overview
 The code reproduces semi-supervised learning results in **Table 1** represented in the paper.
 * Dataset: Reduced CIFAR-10
@@ -10,7 +12,7 @@ The code reproduces semi-supervised learning results in **Table 1** represented 
     * `ra` : [RandAugment](https://arxiv.org/abs/1909.13719) trained only on labeled data
     * `uda`: [UDA (Unsupervised Data Augmentation)](https://arxiv.org/abs/1904.12848) trained on labled & unlabeled data
 * All the baselines can be compatibly trained with MPL(Meta Pseudo Labels).
-
+---
 ## Requirements
 Run the following command to install depedencies:
 ```
@@ -56,12 +58,58 @@ $ python main.py --save_dir out --tag 0527/080_cifar10_uda_mpl_000 --test_only
 ```
 You can omit `--save_dir` if you have stored checkpoints in the default dir: `out`
 
+---
+## Implementation Details
+To see still images, you can refer to [implement.md](./implement.md).
+### Baselines
+<img src = "./figures/00_baseline.gif" width="70%">
+
+To minimize duplicated code lines, baselines are implemented in a way where they share pipelines with others as much as possible. Basically, there exists two model templates which is represented as `model A` and `model B`, which can be alternatively replaced by 'student' or 'teacher' in MPL.  Baseline models take the place of `model A` and can be considered as stand-alone **student** model. This design choice was made to ease the reproduction of their incremental hyperparameter search scheme described in the parer.
+
+### Baselines + MPL
+<img src = "./figures/10_baseline_mpl.gif" width="70%">
+
+When MPL comes on the stage, you `model A` who was previously taking a role of a student will now be the teacher while keeping the same augmentation pipelines tagged along with it. Then `model B` will be the new student who never sees the labeled data but only the guides the teacher offers. Note that you always evaluate the student after the training ends regardless of whether its MPL or non-MPL model.
+
+### Two Phases Training of MPL
+<img src = "./figures/20_two_phases.gif" width="70%">
+
+At each training step, in turn, we train student and teacher as described in the paper. The only thing we have to take caution is that when student is updated according to the guidance of the teacher, it has to create computational graphs of that updating operation, which is not the case in general, in preparation for backpropagating the signal down to the teacher afterwards.
+
+---
+
+## Result (in progress)
+
+| WResNet 28x2          | Paper (top-1)         | Our (top-1)           |
+|-----------------------|----------------------:|----------------------:|
+| Supervised            | 82.14 &plusmn; 0.25   | 81.22%                |
+| Label Smoothing       | 82.21 &plusmn; 0.18   | 80.88%                |
+| Supervised + **MPL**  | 83.71 &plusmn; 0.21   | 82.63%                |
+| RandAugment           | 85.53 &plusmn; 0.25   | 84.64%                |
+| RandAugment + **MPL** | 87.55 &plusmn; 0.14   | Ongoing               |
+| UDA                   | 94.53 &plusmn; 0.18   | Ongoing               |
+| UDA + **MPL**         | 96.11 &plusmn; 0.07   | Ongoing               |
+
+- For `Supervised` baseline and the MPL-augmented version, we tuned the hyperparameters from scratch, not following the incremental method described in the paper.
+- It is highly likely that experiments that will follow on `RandAugment` can improve more. In the last experiment, we set training steps to be 100K which seemed to be too short as the performance improved even a few steps before the training steps ran out.  
+- Experiments on `UDA` is still ongoing. We found a bug in the code and had it fixed, so we have to re-tune hyperparameters, which will take hours. We found that UDA baseline outperformed the rest in despite of the incomplete settings, and hope that UDA + MLP will perform even better. A question of time.
+
+---
+
+## Findings
+- `Lable Smoothing` does not seem to contribute at all. When we searched the hyperparameters within relatively wide ranges, the estimated value was even an order of magnitude smaller than the reasonable start point 0.1.
+- In the paper, they scaled both number of labeled data and training steps down to 10% for cost efficiency. However, in our conditions, those parameters found in the reduced scale did not extend to the full scale scenario.
+- With the `Supervised` baseline, even if we cut the MPL gradient coming toward the teacher, the student shows comparable performance compared to the MPL-driven version. Need to do some ablation tests to validate the effect of MPL gradient apart from knowledge distillation relying on the UDA-augmented teacher.
+- If you tune prediction sharpening techniques in UDA along with TSA scheduling in the aforementioned reduced scale, model can cheat  
+
+---
+
 ## Features
 ### Gradient-of-gradient Traceable Module Parameters
 With the standard PyTorch APIs, model parameters cannot keep track of `grad_fn` since `torch.nn.Parameter` is not meant to be a non-leaf tensor. One could be able to build models with normal tensors and functions in `torch.nn.functional` with one's own hands, yet it might be quite painful when their complexities are large enough. To bypass this, we use a simple trick where `torch.nn.Parameter` of the module is switched over to `torch.Tensor`. Thus, it can retain computational graphs for second order gradients while not losing compatibility with `torch.nn.Module`.
 
 ### Module Optimizer
-We cannot use subclasses of `torch.optim.Opimizer` along with the trick aforementioned for two reasons: 1) they cannot build graphs of 'gradient descent of gradient descent' since `.step()` is decorated with `torch.no_grad()`, 2) even if they could, they keep references of given parameters and update them with in-place assignments, which hinders second order graph building as well. To tackle issue, we use novel optimizers that posses the references of modules so that it directly modify the parameters without relying on in-place operation.
+We cannot use subclasses of `torch.optim.Opimizer` along with the trick aforementioned for two reasons: 1) they cannot build graphs of 'gradient descent of gradient descent' since `.step()` is decorated with `torch.no_grad()`, 2) even if they could, they keep references of given parameters and update them with in-place assignments, which hinders second order graph building as well. To tackle issue, we use novel optimizers that posses the references of modules so that it can directly modify the parameters without relying on in-place operation.
 ```Python
 from optim.sgd import SGD
 optim = SGD([{'module': model.base},
@@ -70,7 +118,7 @@ optim = SGD([{'module': model.base},
 ```
 
 ### Preprocessing RandAugment in UDA
-By setting `uda.preproc_epochs` to an integer larger than 0 in the .yaml configuration file, you can simulate the RandAugment results during that amount of epochs and save them in the disk. Multiple number of workers specified by `uda.preproc_workers` will pay all the cost in advance instead of amortizing it at each instance sampling. (Yet, no speed gain probably from slow file I/O in HDD.)
+By setting `uda.preproc_epochs` to an integer larger than 0 in the .yaml configuration file, you can simulate the RandAugment results during that amount of epochs and save them in the disk. As many workers as specified by `uda.preproc_workers` will be involved to pay reasonable portion (but not all) of the total augmentation cost in advance instead of amortizing it at each instance sampling. (Yet, no speed gain probably from slow file I/O in HDD.)
 
 ### Hyperparameter Tunning using RAY
 You can run hyperparameter tuning with the command:
@@ -81,7 +129,7 @@ The result will be saved via a file stream if you specified any type of tags. Th
 
 ### GPU Profiling
 This project includes a GPU memory profiler for debugging OOM problems.
-If you assign a GPU ID to the environment variable `$(DEBUG_DEVICE)`, the model will be uploaded to that GPU while tracking its usuage throughout the iterations.
+If you assign a GPU ID to the environment variable `$(DEBUG_DEVICE)`, the model will be uploaded to that GPU while tracing its usuage throughout the iterations.
 ```
 $ DEBUG_DEVICE=0 python train.py --config ./config/080_cifar10_uda_mpl.yaml
 ```
@@ -116,26 +164,7 @@ with GPUProfiler.get_instance():
     y = model(x)
 loss = criterion(y_pred, y)
 ```
+---
 
-## Implementation Details
-To see still images, you can refer to [implement.md](./implement.md).
-### Baselines
-<img src = "./figures/00_baseline.gif" width="70%">
-
-### Baselines + MPL
-<img src = "./figures/10_baseline_mpl.gif" width="70%">
-
-### Two Phases Training of MPL
-<img src = "./figures/20_two_phases.gif" width="70%">
-
-## Result (in progress)
-### CIFAR-10 / WResNet 28x2  
-| WResNet 28x2          | Paper (top-1)         | Our (top-1)           |
-|-----------------------|----------------------:|----------------------:|
-| Supervised            | 82.14 &plusmn; 0.25   | 81.22%                |
-| Label Smoothing       | 82.21 &plusmn; 0.18   |                       |
-| Supervised + **MPL**  | 83.71 &plusmn; 0.21   | 82.63%                |
-| RandAugment           | 85.53 &plusmn; 0.25   |                       |
-| RandAugment + **MPL** | 87.55 &plusmn; 0.14   |                       |
-| UDA                   | 94.53 &plusmn; 0.18   |                       |
-| UDA + **MPL**         | 96.11 &plusmn; 0.07   |                       |
+## Trouble Shooting
+- When you assign a new tensor to an existing tensor, make sure `__del__` of `.grad` to be called before its tensor's is called. In usual cases, one would not bother, but here we are dealing with `.grad` with `grad_fn`. It seems that destructing those multi-level references could not be treated properly, which can lead to dreadful GPU memory leaks.
