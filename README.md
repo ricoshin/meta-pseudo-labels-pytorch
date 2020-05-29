@@ -204,4 +204,4 @@ loss = criterion(y_pred, y)
 ---
 
 ## Trouble Shooting
-- When you assign a new tensor to an existing tensor, make sure `__del__` of `.grad` to be called before its tensor's is called. In usual cases, one would not bother, but here we are dealing with `.grad` with `grad_fn`. It seems that destructing those multi-level references could not be treated properly, which can lead to dreadful GPU memory leaks.
+- When you assign a new tensor to an existing tensor, make sure `__del__` of `.grad` to be called before its tensor's is called. In usual cases, one would not be bothered, but here we are dealing with `.grad` with `grad_fn`. It seems that destructing those multi-level references could not be treated properly, which can lead to dreadful GPU memory leaks.
