@@ -113,6 +113,8 @@ At each training step, in turn, we train student and teacher as described in the
 
 ## Result (in progress)
 
+You can find model snapshots, log, TF record and everything at: [Google Drive](https://drive.google.com/drive/folders/1ZSpM2VxjG76pa-WHaUlenTDGdv_RvScZ?usp=sharing)
+
 | WResNet 28x2          | Paper (top-1)         | Our (top-1)           |
 |-----------------------|----------------------:|----------------------:|
 | Supervised            | 82.14 &plusmn; 0.25   | 81.22%                |
