@@ -33,6 +33,7 @@ parser.add_argument('--from_scratch', action='store_true')
 parser.add_argument('--loader_workers', type=int, default=4)
 parser.add_argument('--autotag', action='store_true')
 parser.add_argument('--tag', type=str, default='')
+parser.add_argument('--load_dir', type=str, default='')
 
 
 if __name__ == '__main__':

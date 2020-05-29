@@ -1,4 +1,4 @@
-# 003_cifar_label_smoothing
+# 020_cifar_label_smoothing.yaml
 model: wresnet_28_2
 dataset: cifar10
 n_labeled: 4000
@@ -9,18 +9,23 @@ method:
   base: sup
   is_mpl: False
 optim:
-  lb_smooth: 0.14
+  momentum: 0.5287341692984787
+  lb_smooth: 0.018931293860215248
+comm:
+  n_steps: 100000  
+  bn_decay: 0.9573949263266688
+  w_decay: 5.012409921871573e-05
 batch_size:
   sup: 128
   # uns: 128
   test: 128
 stdn:
-  lr: 0.25
-  dropout: 0.03
+  lr: 0.31336847499932097
+  dropout: 0.005797392917688993
 tune:
-  # stdn.lr: [0.001, 1.0]
-  # stdn.dropout: [0, 1]
-  # optim.momentum: [0.5, 0.999]
+  stdn.lr: [0.001, 1.0]
+  stdn.dropout: [0, 1]
+  optim.momentum: [0.5, 0.999]
   optim.lb_smooth: [0, 0.5]
-  # comm.w_decay: [0.001, 0.00001]
-  # comm.bn_decay: [0.5, 0.999]
+  comm.w_decay: [0.001, 0.00001]
+  comm.bn_decay: [0, 1]

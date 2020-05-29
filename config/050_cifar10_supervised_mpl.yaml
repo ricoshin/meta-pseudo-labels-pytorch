@@ -1,0 +1,36 @@
+# 050_cifar10_supervised_mpl.yaml
+model: wresnet_28_2
+dataset: cifar10
+n_labeled: 4000
+valid:
+  metric: top1 # in ['top1', 'loss']
+  interval: 500
+method:
+  base: sup
+  is_mpl: True
+optim:
+  momentum: 0.5074944713903191
+comm:
+  n_steps: 100000  
+  bn_decay: 0.947970211217681
+  w_decay: 0.00018115568354097492
+batch_size:
+  sup: 128
+  uns: 128
+  test: 128
+stdn:
+  lr: 0.33273151079247015
+  dropout: 0.17619625557505525
+tchr:
+  lr: 0.8096812014344555
+  dropout: 0.1309968448109169
+tune:
+  stdn.lr: [0.001, 1.0]
+  tchr.lr: [0.001, 1.0]
+  stdn.dropout: [0, 1]
+  tchr.dropout: [0, 1]
+  optim.momentum: [0.5, 0.999]
+  # batch_size.sup: [64, 512]
+  # batch_size.uns: [64, 512]
+  comm.w_decay: [0.001, 0.00001]
+  comm.bn_decay: [0, 1]

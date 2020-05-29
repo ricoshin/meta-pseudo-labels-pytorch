@@ -70,7 +70,6 @@ class ModuleOptimizer(torch.optim.Optimizer):
     for module in self.modules:
       for param in module.parameters():
         if param.grad is not None:
-          param.grad.grad = None  # to prevent memory leak
           param.grad = None
 
   def add_param_group(self, param_group):

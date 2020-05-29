@@ -1,0 +1,42 @@
+# 070_cifar10_uda_mpl.yaml
+model: wresnet_28_2
+dataset: cifar10
+n_labeled: 4000
+valid:
+  metric: top1
+  interval: 500
+method:
+  base: uda
+  is_mpl: True
+optim:
+  momentum: 0.500057073033855
+comm:
+  bn_decay: 0.417022004702574
+  w_decay: 0.00028687875149226356
+batch_size:
+  sup: 128
+  uns: 128
+  test: 128
+stdn:
+  lr: 0.14760913492629593
+  dropout: 0.30233257263183977
+tchr:
+  lr: 0.18707395116629325
+  dropout: 0.0923385947687978
+uda:
+  factor: 3.9676747423066994
+  tsa_schedule: ''  # ['', ''linear', 'log', 'exp']  # for labeled loss
+  confid_threshold: 0.34556072704304774   # for unlabeled target dist.
+  softmax_temp: 0.538816734003357       # for unlabeled predicted dist.
+tune:
+  stdn.lr: [0.001, 1.0]
+  tchr.lr: [0.001, 1.0]
+  stdn.dropout: [0, 1]
+  tchr.dropout: [0, 1]
+  optim.momentum: [0.5, 0.999]
+  # batch_size.sup: [64, 512]
+  comm.w_decay: [0.001, 0.00001]
+  comm.bn_decay: [0, 1]
+  uda.factor: [0, 10]
+  uda.confid_threshold: [0, 1]
+  uda.softmax_temp: [0, 1]

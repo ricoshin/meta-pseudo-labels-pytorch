@@ -1,18 +1,19 @@
-# 002_cifar_debug.yaml
-model: wresnet_4_1
+# 060_cifar_10_randaugment.yaml
+model: wresnet_28_2
 dataset: cifar10
 n_labeled: 4000
 valid:
   metric: top1
-  interval: 5
+  interval: 500
 method:
-  base: uda  # sup, ra, uda
+  base: ra
   is_mpl: True
 optim:
-  lb_smooth: 0.1
+  momentum: 0.7128109194621965
 comm:
-  n_steps: 60
-  n_warmup: 10
+  n_steps: 100000  
+  bn_decay: 0.5172675985011298
+  w_decay: 9.27582054766412e-05
 batch_size:
   sup: 128
   uns: 128
@@ -23,11 +24,6 @@ stdn:
 tchr:
   lr: 0.125
   dropout: 0.5
-uda:
-  factor: 1.0
-  tsa_schedule: 'linear'  # ['', ''linear', 'log', 'exp']  # for labeled loss
-  confid_threshold: 0.8   # for unlabeled target dist.
-  softmax_temp: 0.4       # for unlabeled predicted dist.
 randaug:
   n: 3
   m: 4
@@ -40,6 +36,5 @@ tune:
   # batch_size.sup: [64, 512]
   comm.w_decay: [0.001, 0.00001]
   comm.bn_decay: [0, 1]
-  uda.factor: [0, 10]
-  uda.confid_threshold: [0, 1]
-  uda.softmax_temp: [0, 1]
+  # randaug.n: [1, 15]
+  # randaug.m: [1, 20]

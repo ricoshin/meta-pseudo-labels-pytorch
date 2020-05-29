@@ -6,9 +6,8 @@ from ray.tune.utils import get_pinned_object
 from torch import nn
 
 from data import get_datasets, get_dataloaders
-from nn.losses import TrainingLosses
-from optim import units
-from optim.manager import TrainingManager
+from model.losses import TrainingLosses
+from learn import train, test, TrainingManager
 from utils.config import Config
 from utils.debugger import getSignalCatcher
 from utils.tfwriter import TFWriters
@@ -35,14 +34,14 @@ class TrainingEnvironment:
       name_list=['train', 'valid'],
       deactivated=not cfg.save_dir,
     )
-    self.m = TrainingManager(cfg, data_parallel=False)
+    self.m = TrainingManager(cfg, data_parallel=cfg.data_parallel)
     self.losses = TrainingLosses(cfg)
     self.cfg = cfg
 
   def _train_unit(self, tuning):
     """A training unit handling some amount of iterations before validation."""
     self.m.train()
-    return units.train(
+    return train(
       cfg=self.cfg,
       iterable=self.m.train_step_generator(
         local_max_step=self.cfg.valid.interval,
@@ -57,7 +56,7 @@ class TrainingEnvironment:
   def _test_unit(self, tuning, mode):
     """A testing unit which can be used for both valiation and evaluation."""
     self.m.eval()
-    return units.test(
+    return test(
       iterable=self.m.test_step_generator(
         test_loader=self.loaders.test,
         mode=mode,

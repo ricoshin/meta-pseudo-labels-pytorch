@@ -20,7 +20,7 @@ def _update_params(module, names, tensor, _global_name=None):
     _update_params(module, names, tensor, _global_name)
   else:
     param_name = names[0]
-    # just for gpu debugging
+    # just for gpu debugging purpose
     if hasattr(module._parameters[param_name], '_head_str'):
       tensor._head_str = module._parameters[param_name]._head_str
       assert hasattr(module._parameters[param_name], '_info_str')
@@ -30,19 +30,17 @@ def _update_params(module, names, tensor, _global_name=None):
     else:
       tensor._id_origin = id(module._parameters[param_name])
     # must call gradient __del__ first to prevent memory leak
-    module._parameters[param_name].grad.grad = None
+    # module._parameters[param_name].grad.grad = None
     module._parameters[param_name].grad = None
     module._parameters[param_name] = tensor
 
 
 class ModuleSGD(ModuleOptimizer):
-  """With the standard PyTorch APIs, model parameters cannot keep tracking
+  """With the standard PyTorch APIs, model parameters cannot keep track of
   grad_fn since nn.Parameter is not meant to be non-leaf tensor. To bypass
   this, we use a simple trick where torch.nn.Parameter of the module is
   switched over to torch.Tensor. Thus, it can retain computational graphs for
-  second order gradients while not losing compatibility with torch.nn.Module
-  significantly. Note that some functions would fail after using this trick,
-  e.g.nn.Module.apply(), which can be cured easily if needed.
+  second order gradients while not losing compatibility with torch.nn.Module.
   """
   def __init__(self, modules, lr=required, momentum=0, dampening=0,
                weight_decay=0, nesterov=False):
@@ -80,13 +78,13 @@ class ModuleSGD(ModuleOptimizer):
         if p.grad is None:
             continue
         second_order = True if p.grad.grad_fn else False
-        # torch.set_grad_enabled(second_order)
+        # if second_order:
+        #   import pdb; pdb.set_trace()
         g = p.grad
-        # with torch.no_grad():
         if weight_decay != 0:
           g = g.add(p.detach(), alpha=weight_decay)  # drop factor 2
         if momentum != 0:
-          # Use the names rather than parameter objects as keys,
+          # use the names rather than parameter objects as keys,
           # since their ids can be varied at every update in our version.
           param_state = self.state[f"module_{i}.{n}"]
           if 'momentum_buffer' not in param_state:

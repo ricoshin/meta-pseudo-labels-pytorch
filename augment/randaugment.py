@@ -20,20 +20,22 @@ class RandAugment:
 
 def augment_list():
   return [
-    (Identity, 0., 1.0),
     (AutoContrast, 0, 1),
     (Equalize, 0, 1),
+    (Invert, 0, 1),
     (Rotate, 0, 30),
-    (Solarize, 0, 256),
-    (Color, 0.1, 1.9),
     (Posterize, 0, 4),
+    (Solarize, 0, 256),
+    (SolarizeAdd, 0, 110),
+    (Color, 0.1, 1.9),
     (Contrast, 0.1, 1.9),
     (Brightness, 0.1, 1.9),
     (Sharpness, 0.1, 1.9),
     (ShearX, 0., 0.3),
     (ShearY, 0., 0.3),
-    (TranslateX, 0., 0.33),
-    (TranslateY, 0., 0.33),
+    (CutoutAbs, 0, 40),
+    (TranslateXabs, 0., 100),
+    (TranslateYabs, 0., 100),
   ]
 
 

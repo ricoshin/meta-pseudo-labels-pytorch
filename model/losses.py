@@ -69,6 +69,8 @@ class TrainingSignalAnnealingCELoss(nn.Module):
     else:
       self.num_classes = input.size(-1)
     loss = F.cross_entropy(input, target, reduction='none')
+    if self.schedule == '':
+      return loss.mean()
     target_one_hot = F.one_hot(target, self.num_classes)
     input_probs = F.softmax(input, dim=-1)
     threshold = self._get_threshold(step).to(input.device)
@@ -96,8 +98,8 @@ class ConsistencyKLDLoss(nn.Module):
       raise Exception('softmax_temp is expected to be lower than or '
         f'equal to 1. (given: {self.softmax_temp})')
     elif self.softmax_temp < 1.:
-      if self.softmax_temp < 1e-2:
-        raise Exception(f'too low softmax_temp: {self.softmax_temp}')
+      # if self.softmax_temp < 1e-2:
+      #   raise Exception(f'too low softmax_temp: {self.softmax_temp}')
       target_sharp = target / self.softmax_temp
 
     target_sharp = F.softmax(target_sharp, self.dim)

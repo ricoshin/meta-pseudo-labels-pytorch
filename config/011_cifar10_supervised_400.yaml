@@ -1,4 +1,4 @@
-# 030_cifar_10_randaugment.yaml
+# 002_cifar10_supervised.yaml
 model: wresnet_28_2
 dataset: cifar10
 n_labeled: 4000
@@ -6,24 +6,20 @@ valid:
   metric: top1
   interval: 500
 method:
-  base: ra
+  base: sup
   is_mpl: False
 optim:
-  momentum: 0.7000359924531894
+  momentum: 0.5194883368332083
 comm:
-  n_steps: 100000  # 500k in the official code
-  bn_decay: 0.7318004091422953
-  w_decay: 9.979972750118811e-05
+  bn_decay: 0.8946066635038473
+  w_decay: 0.0009158062307439199
 batch_size:
   sup: 128
   # uns: 128
   test: 128
 stdn:
-  lr: 0.8127979774447959
-  dropout: 0.119457050333729
-randaug:
-  n: 5.747162924275698
-  m: 3.42802239101972
+  lr: 0.8782643609259837
+  dropout: 0.1698304195645689
 tune:
   stdn.lr: [0.001, 1.0]
   stdn.dropout: [0, 1]
@@ -31,5 +27,3 @@ tune:
   # batch_size.sup: [64, 512]
   comm.w_decay: [0.001, 0.00001]
   comm.bn_decay: [0, 1]
-  randaug.n: [1, 15]
-  randaug.m: [1, 20]

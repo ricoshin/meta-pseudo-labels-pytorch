@@ -1,24 +1,30 @@
-# 002_cifar10_supervised.yaml
+# 010_cifar10_supervised.yaml
 model: wresnet_28_2
 dataset: cifar10
 n_labeled: 4000
 valid:
   metric: top1
-  interval: 200
+  interval: 500
 method:
   base: sup
   is_mpl: False
+optim:
+  momentum: 0.7799540794085993
+comm:
+  n_steps: 100000  
+  bn_decay: 0.5857592714582879
+  w_decay: 4.0100209163522276e-05
 batch_size:
   sup: 128
   # uns: 128
   test: 128
 stdn:
-  lr: 0.25
-  dropout: 0.03
+  lr: 0.8008320400079357
+  dropout: 0.01864728937294302
 tune:
   stdn.lr: [0.001, 1.0]
   stdn.dropout: [0, 1]
-  # optim.momentum: [0.5, 0.999]
+  optim.momentum: [0.5, 0.999]
   # batch_size.sup: [64, 512]
-  # comm.w_decay: [0.001, 0.00001]
-  # comm.bn_decay: [0.5, 0.999]
+  comm.w_decay: [0.001, 0.00001]
+  comm.bn_decay: [0, 1]

@@ -16,11 +16,11 @@ from utils.color import Color
 log = logging.getLogger('main')
 
 
-def update_dict(d, u):
+def _update_dict(d, u):
   """recursive dict update."""
   for k, v in u.items():
     if isinstance(v, collections.abc.Mapping):
-      d[k] = update_dict(d.get(k, {}), v)
+      d[k] = _update_dict(d.get(k, {}), v)
     else:
       d[k] = v
   return d
@@ -40,12 +40,12 @@ class Config(DotMap):
   def __add__(self, other):
     assert isinstance(other, Config)
     self_dict = self.toDict()
-    update_dict(self_dict, other.toDict())
+    _update_dict(self_dict, other.toDict())
     return Config(self_dict)
 
   def __str__(self):
     _dict = {k: v for k, v in self.toDict().items() if v}
-    head = 'Config(Empty members are ommitted.)\n'
+    head = 'Config(Empty members are omitted.)\n'
     return head + pprint.pformat(_dict, indent=2, width=80)
 
   def update_dotmap(self, dict, delimiter='.'):
@@ -71,7 +71,7 @@ class Config(DotMap):
     return detached
 
 
-def post_process(cfg):
+def _post_process(cfg):
   if cfg.method.base == 'uda':
     cfg.method.is_uda = True
   return cfg
@@ -109,7 +109,7 @@ def init_config(args):
     else:
       tag_num = 0
       tag_gen = lambda n: f"{date}/{yaml_name}_" + str(tag_num).zfill(3)
-      while os.path.exists(tag_gen(tag_num)):
+      while os.path.exists(f"{cfg.save_dir}/{tag_gen(tag_num)}"):
         tag_num += 1
       cfg.tag = tag_gen(tag_num)
 
@@ -136,12 +136,14 @@ def init_config(args):
       # else:
       #   log.info('Previous checkpoints will be loaded if available.')
     else:
+      if cfg.test_only:
+        raise Exception(f'Cannot find test dir: {cfg.save_dir}.')
       # make dir if needed
       os.makedirs(cfg.save_dir)
       log.info(f'Made new save_dir: {cfg.save_dir}')
 
   # SET LOGGER (for file streaming)
-  if cfg.save_dir:
+  if cfg.save_dir and not cfg.test_only:
     logger.set_file_handler('main', cfg.log_level, cfg.save_dir, 'log')
     logger.set_file_handler('result', cfg.log_level, cfg.save_dir, 'result')
 
@@ -157,6 +159,7 @@ def init_config(args):
                       '.yaml file in it or provide new one by --config')
     # if there's no config file in save_dir, use newly privided one.
     log.warning(f'No existing config file.')
+    assert not cfg.test_only, 'test_only mode needs a saved config file.'
     yaml_file = cfg.config
     # load default config first
     if os.path.exists(cfg.config_default):
@@ -189,4 +192,4 @@ def init_config(args):
     log.info(f'Backed up config file: {config_backup}')
 
   cfg += cfg_yaml
-  return post_process(cfg)
+  return _post_process(cfg)

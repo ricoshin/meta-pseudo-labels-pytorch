@@ -37,16 +37,19 @@ parser.add_argument('--debug', action='store_true')
 parser.add_argument('--autotag', action='store_true')
 parser.add_argument('--tag', type=str)
 # tune arguments
-parser.add_argument('--redis_port', type=str, default='31693')
+parser.add_argument('--redis_port', type=str, default='31694')
 parser.add_argument('--webui_host', type=str, default='127.0.0.1')
 parser.add_argument('--local_dir', type=str, default='/data/private/ray_result')
 parser.add_argument('--temp_dir', type=str, default='/data/private/tmp')
 parser.add_argument('--save_dir', type=str, default='tune')
+# default: 24 actors on 48 cpu / 8 gpu
+# uda_mpl:  8 actors (cpu_per_trial=6, gpu_per_trial=1)
 parser.add_argument('--cpu_per_trial', type=float, default=2)
-parser.add_argument('--gpu_per_trial', type=float, default=0.3)
+parser.add_argument('--gpu_per_trial', type=float, default=0.333)
 parser.add_argument('--extra_gpu', type=float, default=0.0)
 parser.add_argument('--num_trials', type=int, default=256)
 parser.add_argument('--pin_dataset', type=bool, default=True)
+parser.add_argument('--tune_steps', type=int, default=100000)
 
 
 if __name__ == '__main__':
@@ -58,10 +61,11 @@ if __name__ == '__main__':
   # overwrite
   cfg.update_dotmap({
     'loader_workers': int(cfg.cpu_per_trial),
-    'n_labeled': 4000,
+    # 'n_labeled': 400,
     # 'comm.n_steps': 500,
-    'comm.n_steps': 300 if cfg.debug else 100000,
-    'valid.interval': 100,
+    # 'comm.n_steps': 300 if cfg.debug else 100000,
+    'uda.preproc_epochs': 0,
+    'valid.interval': 200,
   })
   sanity_check(cfg)
   log.info(cfg)
@@ -96,7 +100,6 @@ if __name__ == '__main__':
   }[cfg.valid.metric]
 
   # Bayesian search algorithm
-  # import pdb; pdb.set_trace()
   search_alg = BayesOptSearch(
     space=tune_space.toDict(),
     metric=cfg.valid.metric,
@@ -113,8 +116,6 @@ if __name__ == '__main__':
     metric=cfg.valid.metric,
     mode=mode,
   )
-  # ddd = TuningEnvironment.set_trainenv_kwargs(cfg=cfg, datasets=datasets)
-  # import pdb; pdb.set_trace()
   # run
   assert torch.cuda.is_available()
   with Watch('tune.run', log) as t:
@@ -128,14 +129,14 @@ if __name__ == '__main__':
         'gpu': cfg.gpu_per_trial,
         'extra_gpu': cfg.extra_gpu,
       },
-      # config=tune_cfg,
       search_alg=search_alg,
       scheduler=scheduler,
-      stop=lambda id, res: res['is_finished'],
+      # stop=lambda id, res: res['is_finished'],
+      stop=lambda id, res: res['step'] >= cfg.tune_steps,
       num_samples=2 if cfg.debug else cfg.num_trials,
       local_dir=cfg.local_dir,
-      checkpoint_at_end=True,
-      checkpoint_freq=3,
+      # checkpoint_at_end=True,
+      # checkpoint_freq=3,
       # resume=True,
       # reuse_actors=True,
     )

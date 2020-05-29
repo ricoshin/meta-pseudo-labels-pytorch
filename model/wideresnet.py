@@ -16,11 +16,11 @@ import numpy as np
 log = logging.getLogger('main')
 
 
-def conv3x3(in_planes, out_planes, stride=1):
+def _conv3x3(in_planes, out_planes, stride=1):
   return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=True)
 
 
-def conv_init(m):
+def _conv_init(m):
   classname = m.__class__.__name__
   if classname.find('Conv') != -1:
     init.xavier_uniform_(m.weight, gain=np.sqrt(2))
@@ -30,7 +30,7 @@ def conv_init(m):
     init.constant_(m.bias, 0)
 
 
-def patch_getattr(module):
+def _patch_getattr(module):
   class AttrPatchedClass(type(module)):
     def __getattr__(self, name):
       attr = super(module.__class__, self).__getattr__(name)
@@ -95,7 +95,7 @@ class WideResNet(nn.Module):
     nStages = [16, 16*k, 32*k, 64*k]
 
     modules = nn.Sequential(OrderedDict([
-      ('conv0', conv3x3(3,nStages[0])),
+      ('conv0', _conv3x3(3,nStages[0])),
       ('wide1', self._wide_layer(
         WideBasic, nStages[1], n, bn_momentum, dropout_rate, stride=1)),
       ('wide2', self._wide_layer(
@@ -109,25 +109,16 @@ class WideResNet(nn.Module):
     ]))
     # to have distinguishable name btw std & tchr
     self.add_module(name, modules)
-    self.apply(patch_getattr)
+    # self.apply(_conv_init)
+    self.apply(_patch_getattr)
     self.reset()
 
-    # for debugging
-    # self._paramters_backup = self._parameters
-    # def _parameters(self):
-    #   import pdb; pdb.set_trace()
-    #   return self._paramters_backup
-    # self._parameters = property(_parameters)
 
   def reset(self):
     def param_to_tensor(module):
       for name, param in module._parameters.items():
         module._parameters[name] = param.data.requires_grad_(True)
     self.apply(param_to_tensor)
-  #   self.apply = self._apply_disabled
-  #
-  # def _apply_disabled(self):
-  #   raise NotImplementedError
 
   def _wide_layer(
     self, block, planes, num_blocks, bn_momentum, dropout_rate, stride):

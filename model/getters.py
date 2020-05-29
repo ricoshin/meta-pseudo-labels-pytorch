@@ -12,7 +12,7 @@ from nn.wideresnet import WideResNet
 log = logging.getLogger('main')
 
 
-def get_num_classes(dataset_name):
+def _get_num_classes(dataset_name):
   assert isinstance(dataset_name, str)
   try:
     return {
@@ -23,7 +23,7 @@ def get_num_classes(dataset_name):
     raise Exception(f'Invalid dataset name: {dataset_name}')
 
 
-def parse_model(model):
+def _parse_model(model):
   assert isinstance(model, str)
   parsed = model.split('_')
   assert parsed[0] == 'wresnet', f'{parsed[0]}'
@@ -32,12 +32,12 @@ def parse_model(model):
 
 
 def get_model(model, dataset, bn_momentum, dropout, data_parallel, name):
-  depth, widen_factor = parse_model(model)
-  num_classes = get_num_classes(dataset)
+  depth, widen_factor = _parse_model(model)
+  num_classes = _get_num_classes(dataset)
   model = WideResNet(
     depth, widen_factor, bn_momentum, dropout, num_classes, name)
   if data_parallel:
-      model = DataParallel(model)
+    model = DataParallel(model)
   assert torch.cuda.is_available()
   model = model.cuda()
   # torch.backends.cudnn.enabled = False
@@ -65,7 +65,10 @@ def get_optimizer(optim_name, model, **kwargs):
 
 
 def get_scheduler(optimizer, n_steps, n_warmup):
-  scheduler = CosineAnnealingLR(optimizer, T_max=n_steps-n_warmup)
-  scheduler = GradualWarmupScheduler(
-    optimizer, multiplier=1., total_epoch=n_warmup, after_scheduler=scheduler)
+  if n_warmup == 0.:
+      scheduler = CosineAnnealingLR(optimizer, T_max=n_steps)
+  else:
+    scheduler = CosineAnnealingLR(optimizer, T_max=n_steps-n_warmup)
+    scheduler = GradualWarmupScheduler(
+      optimizer, multiplier=1., total_epoch=n_warmup, after_scheduler=scheduler)
   return scheduler

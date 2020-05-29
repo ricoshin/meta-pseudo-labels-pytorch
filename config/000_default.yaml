@@ -1,6 +1,7 @@
 # 000_default.yaml
 model: wresnet_28_2
 dataset: cifar10
+data_parallel: True
 n_labeled: 4000
 valid:
   metric: top1 # in ['top1', 'loss']
@@ -21,7 +22,7 @@ aug:
   cutout: 16
 comm:
   w_decay: 0.0005
-  bn_decay: 0.99
+  bn_decay: 0.1  # 1 - momentum
   n_steps: 1000000  # 500k in the official code
   n_warmup: 2000
 batch_size:
@@ -35,6 +36,8 @@ stdn:
   lr: 0.03
   dropout: 0.0  # no dropout
 uda:
+  preproc_workers: 20
+  preproc_epochs: 0
   factor: 1.0
   tsa_schedule: 'linear'  # ['', ''linear', 'log', 'exp']  # for labeled loss
   confid_threshold: 0.8   # for unlabeled target dist.

@@ -122,11 +122,17 @@ To see still images, you can refer to [implement.md](./implement.md).
 ### Baselines
 <img src = "./figures/00_baseline.gif" width="70%">
 
+To minimize duplicated code lines, baselines are implemented in a way where they share pipelines with others as much as possible. Basically, there exists two model templates which is represented as `model A` and `model B`, which can be alternatively replaced by 'student' or 'teacher' in MPL.  Baseline models take the place of `model A` and can be considered as stand-alone **student** model. This design choice was made to ease the reproduction of their incremental hyperparameter search scheme described in the parer.
+
 ### Baselines + MPL
 <img src = "./figures/10_baseline_mpl.gif" width="70%">
 
+When MPL comes on the stage, you `model A` who was previously taking a role of a student will now be the teacher while keeping the same augmentation pipelines tagged along with it. Then `model B` will be the new student who never sees the labeled data but only the guides the teacher offers. Note that you always evaluate the student after the training ends regardless of whether its MPL or non-MPL model.
+
 ### Two Phases Training of MPL
 <img src = "./figures/20_two_phases.gif" width="70%">
+
+At each training step, in turn, we train student and teacher as described in the paper. The only thing we have to take caution is that when student is updated according to the guidance of the teacher, it has to create computational graphs of that updating operation, which is not the case in general, in preparation for backpropagating the signal down to the teacher afterwards.
 
 ## Result (in progress)
 ### CIFAR-10 / WResNet 28x2  

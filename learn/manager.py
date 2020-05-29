@@ -7,8 +7,8 @@ from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
 
 from utils.color import Color
-from optim import get_model, get_optimizer, get_scheduler
-from optim.metric import MetricMonitor
+from learn import get_model, get_optimizer, get_scheduler
+from learn.metric import MetricMonitor
 
 log = logging.getLogger('main')
 
@@ -61,7 +61,7 @@ class TrainingManager:
       'model': cfg.model,
       'dataset': cfg.dataset,
       'bn_momentum': cfg.comm.bn_decay,
-      'data_parallel': data_parallel,
+      'data_parallel': False if cfg.test_only else data_parallel,
     }
     optim_kwargs = {
       'optim_name': cfg.optim.name,
@@ -77,7 +77,7 @@ class TrainingManager:
     self.stdn = ModelControl(model, optim, sched)
     self.model_ctrls['stdn'] = self.stdn
 
-    if cfg.method.is_mpl:
+    if cfg.method.is_mpl and not cfg.test_only:
       log.info('Create a teacher model control.')
       model = get_model(dropout=cfg.tchr.dropout, name='tchr', **model_kwargs)
       optim = get_optimizer(model=model, lr=cfg.tchr.lr, **optim_kwargs)

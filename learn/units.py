@@ -8,10 +8,8 @@ from optim.metric import topk_accuracy, AverageMeter
 from utils import concat
 from utils.debugger import getSignalCatcher
 from utils.gpu_profile import GPUProfiler, get_gpu_memory
-from pytorch_memlab import profile, profile_every, MemReporter
+# from pytorch_memlab import profile, profile_every, MemReporter
 from utils import graph, depth
-
-import gc
 
 log = logging.getLogger('main')
 sigquit = getSignalCatcher('SIGQUIT')
@@ -29,14 +27,12 @@ def _check_params(ctrl):
 # @profile_every(1)
 def train(cfg, iterable, ctrl_a, ctrl_b, loaders, losses):
   avgmeter = AverageMeter('train')
-  reporter_a = MemReporter(ctrl_a.model)
-  reporter_b = MemReporter(ctrl_b.model)
-  report_a = lambda : reporter_a.report()
-  report_b = lambda : reporter_b.report()
+  # reporter_a = MemReporter(ctrl_a.model)
+  # reporter_b = MemReporter(ctrl_b.model)
+  # report_a = lambda : reporter_a.report()
+  # report_b = lambda : reporter_b.report()
   for step in iterable:
     # labeled(supervised) data
-    # if step >= 0:
-    #   import pdb; pdb.set_trace()
     xs, ys = next(loaders.sup)
     xs, ys = xs.cuda(), ys.cuda()
     if cfg.method.is_uda or cfg.method.is_mpl:
@@ -63,15 +59,11 @@ def train(cfg, iterable, ctrl_a, ctrl_b, loaders, losses):
       # ctrl_a: teacher, ctrl_b: student
       if not cfg.method.is_uda:
         yu_pred_a = ctrl_a.model(xu)
-      # if step == 3:
-      #   from utils.gpu_profile import get_gpu_memory; get_gpu_memory(1)
-      #   import pdb; pdb.set_trace()
       yu_pred_b = ctrl_b.model(xu)
       loss_mpl_b = losses.mpl_student(yu_pred_b, yu_pred_a)
 
       loss_mpl_b.backward(retain_graph=True, create_graph=True)
       ctrl_b.step_all(clip_grad=cfg.optim.clip_grad)
-
       ctrl_a.model.zero_grad()  # teacher should not be affected
       ctrl_b.model.zero_grad()
 
@@ -88,7 +80,7 @@ def train(cfg, iterable, ctrl_a, ctrl_b, loaders, losses):
       ctrl_b.detach_()
 
     ys_pred = ys_pred_a if not cfg.method.is_mpl else ys_pred_b
-    acc_top1 = topk_accuracy(ys_pred.detach_(), ys, (1,))
+    acc_top1 = topk_accuracy(ys_pred.detach(), ys, (1,))
     avgmeter.add(top1=acc_top1, num=ys.size(0))
     # torch.cuda.empty_cache()
     # gc.collect()

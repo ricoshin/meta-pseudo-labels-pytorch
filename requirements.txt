@@ -6,3 +6,4 @@ torchviz
 tensorboard
 tensorboardx
 bayesian_optimization
+py3nvml

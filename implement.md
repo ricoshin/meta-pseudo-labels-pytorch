@@ -32,10 +32,19 @@
 <img src = "./figures/20_two_phases.gif" width="70%">
 
 ### Phase 1: Updating Student (Supervised + MPL)
-<img src = "./figures/21_two_phases_1.png" width="70%">
+#### Forward
+<img src = "./figures/21_two_phases_1_1.png" width="70%">
+
+#### Backward
+<img src = "./figures/21_two_phases_1_2.png" width="70%">
 
 ### Phase 2-A: Updating Teacher (Supervised + MPL)
-<img src = "./figures/22_two_phases_2.png" width="70%">
+#### Forward
+<img src = "./figures/22_two_phases_2_1.png" width="70%">
+
+#### Backward
+<img src = "./figures/22_two_phases_2_2.png" width="70%">
 
 ### Phase 2-B: Updating Teacher (UDA + MPL)
-<img src = "./figures/23_two_phases_2_uda.png" width="70%">
+#### Backward
+<img src = "./figures/23_two_phases_2_2_uda.png" width="70%">
