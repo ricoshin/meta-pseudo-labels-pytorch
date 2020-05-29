@@ -132,7 +132,7 @@ if __name__ == '__main__':
       search_alg=search_alg,
       scheduler=scheduler,
       # stop=lambda id, res: res['is_finished'],
-      stop=lambda id, res: res['step'] >= cfg.tune_steps,
+      stop=lambda id, res: res['step'] >= cfg.comm.n_steps,
       num_samples=2 if cfg.debug else cfg.num_trials,
       local_dir=cfg.local_dir,
       # checkpoint_at_end=True,
