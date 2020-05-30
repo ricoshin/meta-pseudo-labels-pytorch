@@ -9,25 +9,25 @@ method:
   base: uda
   is_mpl: True
 optim:
-  momentum: 0.500057073033855
+  momentum: 0.7892928644036526
 comm:
-  bn_decay: 0.417022004702574
-  w_decay: 0.00028687875149226356
+  bn_decay: 0.31736240932216075
+  w_decay: 2.1270007131675558e-05
 batch_size:
   sup: 128
   uns: 128
   test: 128
 stdn:
-  lr: 0.14760913492629593
-  dropout: 0.30233257263183977
+  lr: 0.5513972708987789
+  dropout: 0.3801411726235504
 tchr:
-  lr: 0.18707395116629325
-  dropout: 0.0923385947687978
+  lr: 0.6695636605597314
+  dropout: 0.7453344309065021
 uda:
-  factor: 3.9676747423066994
+  factor: 0.6633483442844157
   tsa_schedule: ''  # ['', ''linear', 'log', 'exp']  # for labeled loss
-  confid_threshold: 0.34556072704304774   # for unlabeled target dist.
-  softmax_temp: 0.538816734003357       # for unlabeled predicted dist.
+  confid_threshold: 0.2649195576628094   # for unlabeled target dist.
+  softmax_temp: 0.3700841979141063       # for unlabeled predicted dist.
 tune:
   stdn.lr: [0.001, 1.0]
   tchr.lr: [0.001, 1.0]

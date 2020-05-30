@@ -121,7 +121,7 @@ You can find model snapshots, log, TF record and everything at: [Google Drive](h
 | Label Smoothing       | 82.21 &plusmn; 0.18   | 80.88%                |
 | Supervised + **MPL**  | 83.71 &plusmn; 0.21   | 82.63%                |
 | RandAugment           | 85.53 &plusmn; 0.25   | 84.64%                |
-| RandAugment + **MPL** | 87.55 &plusmn; 0.14   | Ongoing               |
+| RandAugment + **MPL** | 87.55 &plusmn; 0.14   | 86.74%               |
 | UDA                   | 94.53 &plusmn; 0.18   | Ongoing               |
 | UDA + **MPL**         | 96.11 &plusmn; 0.07   | Ongoing               |
 
