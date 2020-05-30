@@ -126,9 +126,9 @@ You can find model snapshots, log, TF record and everything at: [Google Drive](h
 | UDA + **MPL**         | 96.11 &plusmn; 0.07   | Ongoing               |
 
 - We tuned the hyperparameters from scratch, not following the incremental method described in the paper. We allow the same resource for every methods, i.e. 256 trials using the same search algorithm as described in **Features** section. You can see the tuned hyperparameters in .yaml files in `./config`.
-- It is highly likely that result of following experiments on `RandAugment` improve more. In the last experiment, we set training steps to be 100K which seemed to be too short as the performance improved even a few steps before the training steps ran out.
-- As of this writing `RandAugment + MPL` is outperforming `RandAugment` with significant margin, specifically, at step 15500, **74.25%** without MPL and **77.04%** with MPL.
-- Experiments on `UDA` is still ongoing. We found a bug in the code and had it fixed, so we have to re-tune hyperparameters, which will take hours. We found that UDA baseline outperformed the rest in despite of the incomplete settings, and hope that UDA + MLP will perform even better. A question of time.
+- It is highly likely that result of following experiments on both `RandAugment` and `RandAugment + MPL` improve more. In the last experiment, we set training steps to be 100K which seemed to be too short as the performance improved even a few steps before the training steps ran out.
+- Experiments on `UDA` is still ongoing. We found a bug in the code and had it fixed, so we have to re-tune hyperparameters, which will take hours. We found that UDA baseline outperformed the rest in despite of the incomplete settings, and hope that UDA + MLP will perform even better.
+    - (05/30) Hyperparameter tuning completed. Actual training phase of `UDA + MPL` seems to take more than 160 hrs.
 
 ---
 
