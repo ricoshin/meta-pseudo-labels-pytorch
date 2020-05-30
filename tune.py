@@ -14,7 +14,7 @@ from data import get_datasets
 from utils.color import Color
 from utils.config import init_config, sanity_check
 from utils.watch import Watch
-from optim.environment import TuningEnvironment
+from learn.environment import TuningEnvironment
 
 log = logging.getLogger('main')
 log_result = logging.getLogger('result')

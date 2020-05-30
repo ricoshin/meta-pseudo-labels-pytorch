@@ -8,7 +8,7 @@ if 'DEBUG_DEVICE' in os.environ:
   os.environ['CUDA_VISIBLE_DEVICES'] = os.environ['DEBUG_DEVICE']
   os.environ['CUDA_LAUNCH_BLOCKING']='1'
 
-from optim.environment import TrainingEnvironment
+from learn.environment import TrainingEnvironment 
 from utils import GPUProfiler, Watch
 from utils.config import Config, init_config, sanity_check
 

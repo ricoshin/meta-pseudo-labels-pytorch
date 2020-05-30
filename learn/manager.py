@@ -1,5 +1,6 @@
 import logging
 import os
+from collections import OrderedDict
 from contextlib import contextmanager
 
 import torch
@@ -7,7 +8,7 @@ from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
 
 from utils.color import Color
-from learn import get_model, get_optimizer, get_scheduler
+from model import get_model, get_optimizer, get_scheduler
 from learn.metric import MetricMonitor
 
 log = logging.getLogger('main')
@@ -189,6 +190,8 @@ class TrainingManager:
         loaded = torch.load(filepath)
         self.step = loaded['step']
         self.monitor.best_value = loaded['record']
+        if self.cfg.test_only:
+          loaded['model'] = _convert_if_data_paralleled(loaded['model'])
         ctrl.model.load_state_dict(loaded['model'])
         ctrl.optim.load_state_dict(loaded['optim'])
         ctrl.sched.load_state_dict(loaded['sched'])
@@ -197,3 +200,11 @@ class TrainingManager:
       log_level = 'info' if verbose else 'debug'
       getattr(log, log_level)(f'Loaded snapshot from: {", ".join(logs)}')
       getattr(log, log_level)(f'Resume from step {self.step}.')
+
+def _convert_if_data_paralleled(model_dict):
+  if not list(model_dict.keys())[0][:7] == 'module.':
+    return model_dict
+  new_model_dict = OrderedDict()
+  for k, v in model_dict.items():
+    new_model_dict[k[7:]] = v
+  return new_model_dict

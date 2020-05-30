@@ -7,7 +7,8 @@ from torch.nn import DataParallel
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from warmup_scheduler import GradualWarmupScheduler
 
-from nn.wideresnet import WideResNet
+from model.sgd import ModuleSGD
+from model.wideresnet import WideResNet
 
 log = logging.getLogger('main')
 
@@ -59,7 +60,6 @@ def get_optim_cls(optim_name):
 def get_optimizer(optim_name, model, **kwargs):
   # optim_cls = getattr(optim, get_optim_cls(optim_name))
   # optimizer = optim_cls(model.parameters(), **kwargs)
-  from optim.sgd import ModuleSGD
   optimizer = ModuleSGD(model, **kwargs)
   return optimizer
 

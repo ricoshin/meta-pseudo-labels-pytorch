@@ -148,7 +148,7 @@ With the standard PyTorch APIs, model parameters cannot keep track of `grad_fn` 
 ### Module Optimizer
 We cannot use subclasses of `torch.optim.Opimizer` along with the trick aforementioned for two reasons: 1) they cannot build graphs of 'gradient descent of gradient descent' since `.step()` is decorated with `torch.no_grad()`, 2) even if they could, they keep references of given parameters and update them with in-place assignments, which hinders second order graph building as well. To tackle this issue, we use novel optimizers that posses the references of modules so that it can directly modify the parameters without relying on in-place operation.
 ```Python
-from optim.sgd import SGD
+from learn.sgd import SGD
 optim = SGD([{'module': model.base},
              {'module': model.classifier, 'lr': 1e-3}
             ], lr=1e-2, momentum=0.9)

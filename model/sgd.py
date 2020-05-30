@@ -1,6 +1,6 @@
 import torch
 
-from optim.optimizer import ModuleOptimizer, required
+from model.optimizer import ModuleOptimizer, required
 from utils.gpu_profile import GPUProfiler
 
 
