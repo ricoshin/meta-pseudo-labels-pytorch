@@ -1,5 +1,7 @@
 # Implementation Details
 
+This document contains still images of .gif in READ.md.
+
 ## Baselines
 <img src = "./figures/00_baseline.gif" width="70%">
 

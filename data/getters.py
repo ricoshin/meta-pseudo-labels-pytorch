@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader, Subset, ConcatDataset
 
 from augment import get_transforms
 from data.datasets import TransformedDataset, BiTransformedDataset
-from data.dataloaders import InfiniteDataLoader, DataLoaderTriplet
+from data.loaders import InfiniteDataLoader, DataLoaderTriplet
 from utils.config import Config
 
 log = getLogger('main')
