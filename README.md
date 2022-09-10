@@ -1,6 +1,8 @@
 # Meta Pseudo Labels
 A PyTorch implementation of [Meta Pseudo Labels](https://arxiv.org/abs/2003.10580).
 
+Note that this implementation is based on the first version (v1) rather than the latest version of the paper published in arxiv.
+
 ---
 
 ## Overview
